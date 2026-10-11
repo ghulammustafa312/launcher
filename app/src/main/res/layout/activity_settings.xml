@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?android:attr/colorBackground"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/screen_padding">
+
+        <TextView
+            style="@style/TextAppearance.AeroLauncher.Headline"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/settings_title" />
+
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Widget.AeroLauncher.Card.Glass"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="@dimen/card_padding">
+
+                <TextView
+                    style="@style/TextAppearance.AeroLauncher.Body"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings_appearance"
+                    android:textStyle="bold" />
+
+                <TextView
+                    style="@style/TextAppearance.AeroLauncher.Body"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/settings_appearance_hint" />
+
+                <RadioGroup
+                    android:id="@+id/theme_group"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp">
+
+                    <RadioButton
+                        android:id="@+id/theme_light"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/theme_light" />
+
+                    <RadioButton
+                        android:id="@+id/theme_dark"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/theme_dark" />
+
+                    <RadioButton
+                        android:id="@+id/theme_auto"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/theme_auto" />
+                </RadioGroup>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Widget.AeroLauncher.Card.Glass"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="@dimen/card_padding">
+
+                <TextView
+                    style="@style/TextAppearance.AeroLauncher.Body"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings_palette"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <View
+                        android:layout_width="@dimen/swatch_size"
+                        android:layout_height="@dimen/swatch_size"
+                        android:background="@drawable/swatch_midnight"
+                        android:contentDescription="@string/color_midnight_indigo" />
+
+                    <View
+                        android:layout_width="@dimen/swatch_size"
+                        android:layout_height="@dimen/swatch_size"
+                        android:layout_marginStart="12dp"
+                        android:background="@drawable/swatch_violet"
+                        android:contentDescription="@string/color_violet" />
+
+                    <View
+                        android:layout_width="@dimen/swatch_size"
+                        android:layout_height="@dimen/swatch_size"
+                        android:layout_marginStart="12dp"
+                        android:background="@drawable/swatch_aqua"
+                        android:contentDescription="@string/color_aqua" />
+
+                    <View
+                        android:layout_width="@dimen/swatch_size"
+                        android:layout_height="@dimen/swatch_size"
+                        android:layout_marginStart="12dp"
+                        android:background="@drawable/swatch_orange"
+                        android:contentDescription="@string/color_accent_orange" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+    </LinearLayout>
+</ScrollView>

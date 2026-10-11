@@ -1,0 +1,8 @@
+Project: "Aero Launcher", an original Android launcher app in Java (XML views, AndroidX).
+Rules for every task:
+1. Java only. compileSdk/targetSdk 36, minSdk 24, 64-bit, AAB output. JDK 17.
+2. Originality: never copy Apple's or any other app's name, icons, wallpapers, fonts or sounds. Use only original or properly licensed assets and log each in ASSET_LICENSES.md.
+3. Use only normal permissions. Do NOT use QUERY_ALL_PACKAGES; use <queries> with the MAIN/LAUNCHER intent. Ask for any other permission only when the feature is used.
+4. Collect no personal data. No analytics or ads without asking me first.
+5. Handle edge-to-edge screens (API 36) with WindowInsets.
+6. Ask before adding any library. Keep code modular, commented and smooth at 60fps.

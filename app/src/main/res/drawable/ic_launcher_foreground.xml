@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Original placeholder mark: rounded square + aqua/violet accent. Not copied from any product. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="@color/violet"
+        android:pathData="M30,34c0,-5.5 4.5,-10 10,-10h28c5.5,0 10,4.5 10,10v28c0,5.5 -4.5,10 -10,10h-28c-5.5,0 -10,-4.5 -10,-10z" />
+    <path
+        android:fillColor="@color/aqua"
+        android:pathData="M44,48c0,-2.2 1.8,-4 4,-4h12c2.2,0 4,1.8 4,4v12c0,2.2 -1.8,4 -4,4h-12c-2.2,0 -4,-1.8 -4,-4z" />
+</vector>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand palette (shared across light and dark) -->
+    <color name="midnight_indigo">#1B1F3B</color>
+    <color name="violet">#6C5CE7</color>
+    <color name="aqua">#00D2D3</color>
+    <color name="accent_orange">#FF9F43</color>
+
+    <!-- Light theme surfaces -->
+    <color name="background">#F4F6FB</color>
+    <color name="surface">#FFFFFFFF</color>
+    <color name="on_background">#1B1F3B</color>
+    <color name="on_surface">#1B1F3B</color>
+    <color name="on_primary">#FFFFFFFF</color>
+    <color name="on_secondary">#1B1F3B</color>
+    <color name="on_tertiary">#1B1F3B</color>
+
+    <!-- Glass overlays for light mode -->
+    <color name="glass_fill">#B3FFFFFF</color>
+    <color name="glass_stroke">#66FFFFFF</color>
+    <color name="glass_panel_fill">#99FFFFFF</color>
+
+    <!-- Splash uses brand indigo in both modes -->
+    <color name="splash_background">#1B1F3B</color>
+
+    <!-- Icon placeholder colors -->
+    <color name="ic_launcher_background">#1B1F3B</color>
+</resources>

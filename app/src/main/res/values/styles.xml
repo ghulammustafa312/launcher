@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- One shared rounded shape for cards, panels, and future icon masks -->
+    <style name="ShapeAppearance.AeroLauncher.Rounded" parent="ShapeAppearance.Material3.Corner.None">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">@dimen/corner_radius</item>
+    </style>
+
+    <style name="Widget.AeroLauncher.Card.Glass" parent="Widget.Material3.CardView.Elevated">
+        <item name="shapeAppearance">@style/ShapeAppearance.AeroLauncher.Rounded</item>
+        <item name="cardBackgroundColor">@color/glass_fill</item>
+        <item name="strokeColor">@color/glass_stroke</item>
+        <item name="strokeWidth">@dimen/glass_stroke_width</item>
+        <item name="cardElevation">@dimen/glass_card_elevation</item>
+        <item name="cardUseCompatPadding">true</item>
+    </style>
+
+    <style name="Widget.AeroLauncher.Panel.Glass" parent="Widget.Material3.CardView.Filled">
+        <item name="shapeAppearance">@style/ShapeAppearance.AeroLauncher.Rounded</item>
+        <item name="cardBackgroundColor">@color/glass_panel_fill</item>
+        <item name="strokeColor">@color/glass_stroke</item>
+        <item name="strokeWidth">@dimen/glass_stroke_width</item>
+        <item name="cardElevation">@dimen/glass_panel_elevation</item>
+        <item name="cardUseCompatPadding">true</item>
+    </style>
+
+    <style name="TextAppearance.AeroLauncher.Headline" parent="TextAppearance.Material3.HeadlineMedium">
+        <item name="fontFamily">@font/inter</item>
+        <item name="android:fontFamily">@font/inter</item>
+        <item name="android:textColor">?attr/colorOnBackground</item>
+    </style>
+
+    <style name="TextAppearance.AeroLauncher.Body" parent="TextAppearance.Material3.BodyLarge">
+        <item name="fontFamily">@font/inter</item>
+        <item name="android:fontFamily">@font/inter</item>
+        <item name="android:textColor">?attr/colorOnBackground</item>
+    </style>
+</resources>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.AeroLauncher" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/violet</item>
+        <item name="colorOnPrimary">@color/on_primary</item>
+        <item name="colorSecondary">@color/aqua</item>
+        <item name="colorOnSecondary">@color/on_secondary</item>
+        <item name="colorTertiary">@color/accent_orange</item>
+        <item name="colorOnTertiary">@color/on_tertiary</item>
+        <item name="colorPrimaryContainer">@color/violet</item>
+        <item name="colorSecondaryContainer">@color/aqua</item>
+        <item name="colorTertiaryContainer">@color/accent_orange</item>
+        <item name="android:colorBackground">@color/background</item>
+        <item name="colorOnBackground">@color/on_background</item>
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/on_surface</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="fontFamily">@font/inter</item>
+        <item name="android:fontFamily">@font/inter</item>
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.AeroLauncher.Rounded</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.AeroLauncher.Rounded</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.AeroLauncher.Rounded</item>
+    </style>
+</resources>

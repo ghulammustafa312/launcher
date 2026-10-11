@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Round placeholder for API 24–25. Same original mark inside a circle. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <path
+        android:fillColor="@color/midnight_indigo"
+        android:pathData="M24,4c11.0,0 20,9.0 20,20s-9.0,20 -20,20 -20,-9.0 -20,-20 9.0,-20 20,-20z" />
+    <path
+        android:fillColor="@color/violet"
+        android:pathData="M12,14c0,-2.2 1.8,-4 4,-4h16c2.2,0 4,1.8 4,4v16c0,2.2 -1.8,4 -4,4h-16c-2.2,0 -4,-1.8 -4,-4z" />
+    <path
+        android:fillColor="@color/aqua"
+        android:pathData="M20,20c0,-1.1 0.9,-2 2,-2h4c1.1,0 2,0.9 2,2v4c0,1.1 -0.9,2 -2,2h-4c-1.1,0 -2,-0.9 -2,-2z" />
+</vector>
