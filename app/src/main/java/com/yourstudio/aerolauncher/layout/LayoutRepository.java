@@ -14,6 +14,7 @@ import com.yourstudio.aerolauncher.data.LayoutDao;
 import com.yourstudio.aerolauncher.data.LayoutDatabase;
 import com.yourstudio.aerolauncher.data.LayoutItemEntity;
 import com.yourstudio.aerolauncher.launcher.AppInfo;
+import com.yourstudio.aerolauncher.widgets.WidgetPlacement;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -317,6 +318,9 @@ public final class LayoutRepository {
                 if (item == null || item.folderAppKeys.isEmpty()) {
                     continue;
                 }
+            } else if (LayoutItemEntity.TYPE_WIDGET.equals(entity.type)
+                    || LayoutItemEntity.TYPE_WIDGET_STACK.equals(entity.type)) {
+                continue;
             } else if (entity.appKey != null) {
                 item = HomeItem.app(entity.appKey);
             } else {
@@ -333,10 +337,50 @@ public final class LayoutRepository {
                 }
             }
         }
+
+        for (LayoutItemEntity entity : entities) {
+            if (!LayoutItemEntity.CONTAINER_PAGE_WIDGETS.equals(entity.container)) {
+                continue;
+            }
+            List<Integer> ids = parseWidgetIds(entity);
+            if (ids.isEmpty()) {
+                continue;
+            }
+            boolean stack = LayoutItemEntity.TYPE_WIDGET_STACK.equals(entity.type) || ids.size() > 1;
+            WidgetPlacement placement = new WidgetPlacement(
+                    entity.id,
+                    stack,
+                    ids,
+                    entity.spanRows > 0 ? entity.spanRows : 2,
+                    entity.rank);
+            homeLayout.ensureWidgetPage(entity.pageIndex);
+            homeLayout.pageWidgets.get(entity.pageIndex).add(placement);
+        }
+        for (List<WidgetPlacement> list : homeLayout.pageWidgets) {
+            Collections.sort(list, (a, b) -> Integer.compare(a.rank, b.rank));
+        }
+
         homeLayout.hiddenAppKeys.clear();
         homeLayout.hiddenAppKeys.addAll(hidden);
         homeLayout.trimEmptyPages();
         return homeLayout;
+    }
+
+    @NonNull
+    private static List<Integer> parseWidgetIds(@NonNull LayoutItemEntity entity) {
+        List<Integer> ids = new ArrayList<>();
+        if (entity.widgetIdsCsv != null && !entity.widgetIdsCsv.isEmpty()) {
+            for (String part : entity.widgetIdsCsv.split(",")) {
+                try {
+                    ids.add(Integer.parseInt(part.trim()));
+                } catch (NumberFormatException ignored) {
+                    // Skip bad token.
+                }
+            }
+        } else if (entity.appWidgetId > 0) {
+            ids.add(entity.appWidgetId);
+        }
+        return ids;
     }
 
     private void persistBlocking(@NonNull HomeLayout homeLayout) {
@@ -372,11 +416,51 @@ public final class LayoutRepository {
                     -1,
                     d);
         }
+        for (int p = 0; p < homeLayout.pageWidgets.size(); p++) {
+            List<WidgetPlacement> widgets = homeLayout.pageWidgets.get(p);
+            for (int i = 0; i < widgets.size(); i++) {
+                WidgetPlacement widget = widgets.get(i);
+                widget.rank = i;
+                StringBuilder csv = new StringBuilder();
+                for (int w = 0; w < widget.appWidgetIds.size(); w++) {
+                    if (w > 0) {
+                        csv.append(',');
+                    }
+                    csv.append(widget.appWidgetIds.get(w));
+                }
+                int firstId = widget.appWidgetIds.isEmpty() ? 0 : widget.appWidgetIds.get(0);
+                outWidget(entities, widget, p, firstId, csv.toString());
+            }
+        }
         List<HiddenAppEntity> hidden = new ArrayList<>();
         for (String key : homeLayout.hiddenAppKeys) {
             hidden.add(new HiddenAppEntity(key));
         }
         dao.replaceAll(entities, hidden);
+    }
+
+    private static void outWidget(
+            @NonNull List<LayoutItemEntity> out,
+            @NonNull WidgetPlacement widget,
+            int page,
+            int firstId,
+            @NonNull String csv) {
+        out.add(new LayoutItemEntity(
+                widget.id,
+                widget.stack || widget.appWidgetIds.size() > 1
+                        ? LayoutItemEntity.TYPE_WIDGET_STACK
+                        : LayoutItemEntity.TYPE_WIDGET,
+                LayoutItemEntity.CONTAINER_PAGE_WIDGETS,
+                null,
+                page,
+                -1,
+                -1,
+                widget.rank,
+                null,
+                null,
+                firstId,
+                widget.spanRows,
+                csv));
     }
 
     private static void appendItemEntities(
@@ -398,6 +482,9 @@ public final class LayoutRepository {
                     dock,
                     0,
                     item.appKey,
+                    null,
+                    0,
+                    0,
                     null));
             return;
         }
@@ -412,7 +499,10 @@ public final class LayoutRepository {
                 dock,
                 0,
                 null,
-                item.title));
+                item.title,
+                0,
+                0,
+                null));
         int rank = 0;
         for (String appKey : item.folderAppKeys) {
             out.add(new LayoutItemEntity(
@@ -425,6 +515,9 @@ public final class LayoutRepository {
                     -1,
                     rank++,
                     appKey,
+                    null,
+                    0,
+                    0,
                     null));
         }
     }
@@ -598,6 +691,45 @@ public final class LayoutRepository {
         return null;
     }
 
+    public void addWidgetToPage(int pageIndex, @NonNull WidgetPlacement placement) {
+        HomeLayout copy = deepCopy(layout);
+        copy.ensureWidgetPage(pageIndex);
+        placement.rank = copy.pageWidgets.get(pageIndex).size();
+        copy.pageWidgets.get(pageIndex).add(placement);
+        saveAsync(copy);
+    }
+
+    public void updatePageWidgets(int pageIndex, @NonNull List<WidgetPlacement> widgets) {
+        HomeLayout copy = deepCopy(layout);
+        copy.ensureWidgetPage(pageIndex);
+        copy.pageWidgets.set(pageIndex, new ArrayList<>(widgets));
+        for (int i = 0; i < copy.pageWidgets.get(pageIndex).size(); i++) {
+            copy.pageWidgets.get(pageIndex).get(i).rank = i;
+        }
+        saveAsync(copy);
+    }
+
+    public void removeWidget(@NonNull String widgetId) {
+        HomeLayout copy = deepCopy(layout);
+        for (List<WidgetPlacement> list : copy.pageWidgets) {
+            list.removeIf(w -> widgetId.equals(w.id));
+        }
+        saveAsync(copy);
+    }
+
+    public void updateWidget(@NonNull WidgetPlacement updated) {
+        HomeLayout copy = deepCopy(layout);
+        for (List<WidgetPlacement> list : copy.pageWidgets) {
+            for (int i = 0; i < list.size(); i++) {
+                if (updated.id.equals(list.get(i).id)) {
+                    list.set(i, updated.copy());
+                    saveAsync(copy);
+                    return;
+                }
+            }
+        }
+    }
+
     @NonNull
     public static HomeLayout deepCopy(@NonNull HomeLayout source) {
         List<List<HomeItem>> pages = new ArrayList<>();
@@ -612,6 +744,15 @@ public final class LayoutRepository {
         for (HomeItem item : source.dock) {
             dock.add(item == null ? null : item.copy());
         }
-        return new HomeLayout(pages, dock, new HashSet<>(source.hiddenAppKeys));
+        List<List<WidgetPlacement>> widgets = new ArrayList<>();
+        for (List<WidgetPlacement> page : source.pageWidgets) {
+            List<WidgetPlacement> copyPage = new ArrayList<>();
+            for (WidgetPlacement widget : page) {
+                copyPage.add(widget.copy());
+            }
+            widgets.add(copyPage);
+        }
+        return new HomeLayout(pages, dock, widgets, new HashSet<>(source.hiddenAppKeys));
     }
 }
+

@@ -1,5 +1,6 @@
 package com.yourstudio.aerolauncher.ui;
 
+import android.util.TypedValue;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
@@ -11,11 +12,14 @@ import androidx.core.view.GestureDetectorCompat;
 /**
  * Observes home gestures without stealing touches from ViewPager2 / RecyclerView.
  * Call {@link #observe(MotionEvent)} from {@code Activity.dispatchTouchEvent}.
+ * Top-edge swipe-down opens the in-launcher quick panel; swipe-down elsewhere opens search.
  */
 public final class HomeGestureRouter {
 
     public interface Callbacks {
         void onSwipeDownSearch();
+
+        void onSwipeDownQuickPanel();
 
         void onSwipeUpLibrary();
 
@@ -29,14 +33,21 @@ public final class HomeGestureRouter {
     private final GestureDetectorCompat gestureDetector;
     private final ScaleGestureDetector scaleDetector;
     private final Callbacks callbacks;
+    private final int topEdgePx;
     private boolean pinchHandled;
+    private float downY;
 
     public HomeGestureRouter(@NonNull View host, @NonNull Callbacks callbacks) {
         this.callbacks = callbacks;
+        topEdgePx = Math.round(TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                72,
+                host.getResources().getDisplayMetrics()));
         gestureDetector = new GestureDetectorCompat(host.getContext(),
                 new GestureDetector.SimpleOnGestureListener() {
                     @Override
                     public boolean onDown(@NonNull MotionEvent e) {
+                        downY = e.getY();
                         return true;
                     }
 
@@ -67,7 +78,11 @@ public final class HomeGestureRouter {
                             return false;
                         }
                         if (dy > 140) {
-                            callbacks.onSwipeDownSearch();
+                            if (downY <= topEdgePx || e1.getY() <= topEdgePx) {
+                                callbacks.onSwipeDownQuickPanel();
+                            } else {
+                                callbacks.onSwipeDownSearch();
+                            }
                             return true;
                         }
                         if (dy < -140) {
@@ -100,6 +115,9 @@ public final class HomeGestureRouter {
     public void observe(@NonNull MotionEvent event) {
         if (!callbacks.gesturesEnabled()) {
             return;
+        }
+        if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
+            downY = event.getY();
         }
         scaleDetector.onTouchEvent(event);
         gestureDetector.onTouchEvent(event);

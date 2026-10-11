@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.yourstudio.aerolauncher.HomePreferences;
+import com.yourstudio.aerolauncher.widgets.WidgetPlacement;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -12,7 +13,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Full home layout: paged workspace cells, dock slots, and hidden apps.
+ * Full home layout: paged workspace cells, dock slots, page widgets, hidden apps.
  */
 public final class HomeLayout {
 
@@ -21,14 +22,18 @@ public final class HomeLayout {
     @NonNull
     public final List<HomeItem> dock;
     @NonNull
+    public final List<List<WidgetPlacement>> pageWidgets;
+    @NonNull
     public final Set<String> hiddenAppKeys;
 
     public HomeLayout(
             @NonNull List<List<HomeItem>> pages,
             @NonNull List<HomeItem> dock,
+            @NonNull List<List<WidgetPlacement>> pageWidgets,
             @NonNull Set<String> hiddenAppKeys) {
         this.pages = pages;
         this.dock = dock;
+        this.pageWidgets = pageWidgets;
         this.hiddenAppKeys = hiddenAppKeys;
     }
 
@@ -38,7 +43,9 @@ public final class HomeLayout {
         List<HomeItem> dock = new ArrayList<>(Collections.nCopies(HomePreferences.DOCK_SLOTS, null));
         List<List<HomeItem>> pages = new ArrayList<>();
         pages.add(page);
-        return new HomeLayout(pages, dock, new HashSet<>());
+        List<List<WidgetPlacement>> widgets = new ArrayList<>();
+        widgets.add(new ArrayList<>());
+        return new HomeLayout(pages, dock, widgets, new HashSet<>());
     }
 
     @Nullable
@@ -73,16 +80,22 @@ public final class HomeLayout {
         dock.set(index, item);
     }
 
+    @NonNull
+    public List<WidgetPlacement> widgetsForPage(int page) {
+        ensureWidgetPage(page);
+        return pageWidgets.get(page);
+    }
+
     public void ensurePage(int pageIndex, int capacity) {
         while (pages.size() <= pageIndex) {
             pages.add(new ArrayList<>(Collections.nCopies(capacity, null)));
         }
+        ensureWidgetPage(pageIndex);
         List<HomeItem> page = pages.get(pageIndex);
         while (page.size() < capacity) {
             page.add(null);
         }
         while (page.size() > capacity) {
-            // Prefer dropping empty trailing cells when shrinking.
             int last = page.size() - 1;
             if (page.get(last) == null) {
                 page.remove(last);
@@ -92,11 +105,16 @@ public final class HomeLayout {
         }
     }
 
+    public void ensureWidgetPage(int pageIndex) {
+        while (pageWidgets.size() <= pageIndex) {
+            pageWidgets.add(new ArrayList<>());
+        }
+    }
+
     public int pageCount() {
         return Math.max(1, pages.size());
     }
 
-    /** Removes trailing empty pages, keeping at least one. */
     public void trimEmptyPages() {
         while (pages.size() > 1) {
             List<HomeItem> last = pages.get(pages.size() - 1);
@@ -107,8 +125,14 @@ public final class HomeLayout {
                     break;
                 }
             }
-            if (empty) {
+            List<WidgetPlacement> widgets = pageWidgets.size() >= pages.size()
+                    ? pageWidgets.get(pages.size() - 1)
+                    : Collections.emptyList();
+            if (empty && widgets.isEmpty()) {
                 pages.remove(pages.size() - 1);
+                if (pageWidgets.size() >= pages.size() + 1) {
+                    pageWidgets.remove(pageWidgets.size() - 1);
+                }
             } else {
                 break;
             }

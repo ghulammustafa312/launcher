@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="8dp"
+    android:background="@drawable/bg_glass_card"
+    android:clipToPadding="false"
+    android:padding="4dp">
+
+    <FrameLayout
+        android:id="@+id/widget_host_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <LinearLayout
+        android:id="@+id/widget_stack_dots"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="6dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/widget_edit_bar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <ImageButton
+            android:id="@+id/widget_resize_down"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="@drawable/bg_glass_panel"
+            android:contentDescription="@string/widget_resize_shorter"
+            android:padding="6dp"
+            android:src="@drawable/ic_widget_shorter" />
+
+        <ImageButton
+            android:id="@+id/widget_resize_up"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="4dp"
+            android:background="@drawable/bg_glass_panel"
+            android:contentDescription="@string/widget_resize_taller"
+            android:padding="6dp"
+            android:src="@drawable/ic_widget_taller" />
+
+        <ImageButton
+            android:id="@+id/widget_remove"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="4dp"
+            android:background="@drawable/bg_glass_panel"
+            android:contentDescription="@string/widget_remove"
+            android:padding="6dp"
+            android:src="@drawable/ic_remove_badge" />
+    </LinearLayout>
+</FrameLayout>

@@ -10,10 +10,14 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.button.MaterialButton;
 import com.yourstudio.aerolauncher.R;
 import com.yourstudio.aerolauncher.launcher.AppInfo;
 import com.yourstudio.aerolauncher.launcher.IconCache;
 import com.yourstudio.aerolauncher.layout.HomeItem;
+import com.yourstudio.aerolauncher.widgets.WidgetHostManager;
+import com.yourstudio.aerolauncher.widgets.WidgetPlacement;
+import com.yourstudio.aerolauncher.widgets.WidgetStackFrame;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,16 +31,36 @@ import java.util.Set;
  */
 public final class HomePagerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
+    public interface WidgetCallbacks {
+        boolean isEditMode();
+
+        void onAddWidget(int pageIndex);
+
+        void onRemoveWidget(@NonNull WidgetPlacement placement);
+
+        void onResizeWidget(@NonNull WidgetPlacement placement, int spanRows);
+
+        void onWidgetLongClick(
+                int pageIndex,
+                @NonNull WidgetPlacement placement,
+                @NonNull View anchor);
+    }
+
     private static final int TYPE_HOME = 0;
     private static final int TYPE_LIBRARY = 1;
 
     private final IconCache iconCache;
     private final Map<String, AppInfo> appsByKey;
     private final List<List<HomeItem>> pages = new ArrayList<>();
+    private final List<List<WidgetPlacement>> pageWidgets = new ArrayList<>();
     private final List<AppInfo> installedApps = new ArrayList<>();
     private final Set<String> hiddenKeys = new HashSet<>();
     private int columns = 4;
     private AppGridAdapter.Callbacks callbacks;
+    @Nullable
+    private WidgetCallbacks widgetCallbacks;
+    @Nullable
+    private WidgetHostManager widgetHostManager;
 
     public HomePagerAdapter(
             @NonNull IconCache iconCache,
@@ -50,12 +74,28 @@ public final class HomePagerAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         notifyDataSetChanged();
     }
 
-    public void setPages(@NonNull List<List<HomeItem>> newPages, int columns) {
+    public void setWidgetCallbacks(@Nullable WidgetCallbacks widgetCallbacks) {
+        this.widgetCallbacks = widgetCallbacks;
+    }
+
+    public void setWidgetHostManager(@Nullable WidgetHostManager widgetHostManager) {
+        this.widgetHostManager = widgetHostManager;
+    }
+
+    public void setPages(
+            @NonNull List<List<HomeItem>> newPages,
+            @NonNull List<List<WidgetPlacement>> widgets,
+            int columns) {
         this.columns = Math.max(1, columns);
         pages.clear();
         pages.addAll(newPages);
+        pageWidgets.clear();
+        pageWidgets.addAll(widgets);
         if (pages.isEmpty()) {
             pages.add(Collections.emptyList());
+        }
+        while (pageWidgets.size() < pages.size()) {
+            pageWidgets.add(new ArrayList<>());
         }
         notifyDataSetChanged();
     }
@@ -67,7 +107,6 @@ public final class HomePagerAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         installedApps.addAll(apps);
         hiddenKeys.clear();
         hiddenKeys.addAll(hidden);
-        // Refresh only the library page when present.
         int libraryIndex = pages.size();
         if (libraryIndex >= 0) {
             notifyItemChanged(libraryIndex);
@@ -114,7 +153,17 @@ public final class HomePagerAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             ((LibraryHolder) holder).bind(installedApps, hiddenKeys);
             return;
         }
-        ((PageHolder) holder).bind(position, pages.get(position), columns, callbacks);
+        List<WidgetPlacement> widgets = position < pageWidgets.size()
+                ? pageWidgets.get(position)
+                : Collections.emptyList();
+        ((PageHolder) holder).bind(
+                position,
+                pages.get(position),
+                widgets,
+                columns,
+                callbacks,
+                widgetCallbacks,
+                widgetHostManager);
     }
 
     @Override
@@ -123,6 +172,8 @@ public final class HomePagerAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     }
 
     static final class PageHolder extends RecyclerView.ViewHolder {
+        private final ViewGroup widgetZone;
+        private final MaterialButton addWidgetButton;
         private final RecyclerView grid;
         private final AppGridAdapter adapter;
 
@@ -132,6 +183,8 @@ public final class HomePagerAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 @NonNull Map<String, AppInfo> appsByKey,
                 int columns) {
             super(itemView);
+            widgetZone = itemView.findViewById(R.id.widget_zone);
+            addWidgetButton = itemView.findViewById(R.id.add_widget_button);
             grid = itemView.findViewById(R.id.page_grid);
             adapter = new AppGridAdapter(iconCache, appsByKey);
             grid.setLayoutManager(new GridLayoutManager(itemView.getContext(), columns));
@@ -143,14 +196,50 @@ public final class HomePagerAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         void bind(
                 int pageIndex,
                 @NonNull List<HomeItem> cells,
+                @NonNull List<WidgetPlacement> widgets,
                 int columns,
-                @Nullable AppGridAdapter.Callbacks callbacks) {
+                @Nullable AppGridAdapter.Callbacks callbacks,
+                @Nullable WidgetCallbacks widgetCallbacks,
+                @Nullable WidgetHostManager hostManager) {
             GridLayoutManager layoutManager = (GridLayoutManager) grid.getLayoutManager();
             if (layoutManager != null && layoutManager.getSpanCount() != columns) {
                 layoutManager.setSpanCount(columns);
             }
             adapter.setCallbacks(callbacks);
             adapter.submit(pageIndex, cells);
+
+            boolean editMode = widgetCallbacks != null && widgetCallbacks.isEditMode();
+            addWidgetButton.setVisibility(editMode ? View.VISIBLE : View.GONE);
+            addWidgetButton.setOnClickListener(v -> {
+                if (widgetCallbacks != null) {
+                    widgetCallbacks.onAddWidget(pageIndex);
+                }
+            });
+
+            widgetZone.removeAllViews();
+            if (hostManager == null || widgetCallbacks == null) {
+                return;
+            }
+            for (WidgetPlacement placement : widgets) {
+                WidgetStackFrame frame = new WidgetStackFrame(itemView.getContext());
+                frame.bind(placement, hostManager, editMode, new WidgetStackFrame.Listener() {
+                    @Override
+                    public void onRemove(@NonNull WidgetPlacement p) {
+                        widgetCallbacks.onRemoveWidget(p);
+                    }
+
+                    @Override
+                    public void onResize(@NonNull WidgetPlacement p, int spanRows) {
+                        widgetCallbacks.onResizeWidget(p, spanRows);
+                    }
+
+                    @Override
+                    public void onLongPress(@NonNull WidgetPlacement p, @NonNull View anchor) {
+                        widgetCallbacks.onWidgetLongClick(pageIndex, p, anchor);
+                    }
+                });
+                widgetZone.addView(frame);
+            }
         }
     }
 

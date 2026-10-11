@@ -1,7 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Discover launchable apps without QUERY_ALL_PACKAGES -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.FLASHLIGHT" />
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
+
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.camera.flash"
+        android:required="false" />
+
+    <!-- Discover launchable apps and widgets without QUERY_ALL_PACKAGES -->
     <queries>
         <intent>
             <action android:name="android.intent.action.MAIN" />
@@ -9,6 +20,9 @@
         </intent>
         <intent>
             <action android:name="android.intent.action.WEB_SEARCH" />
+        </intent>
+        <intent>
+            <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
         </intent>
     </queries>
 
@@ -52,6 +66,12 @@
             android:parentActivityName=".SettingsActivity"
             android:theme="@style/Theme.AeroLauncher" />
 
+        <activity
+            android:name=".widgets.builtin.NotesWidgetConfigureActivity"
+            android:exported="false"
+            android:label="@string/widget_notes_configure_title"
+            android:theme="@style/Theme.AeroLauncher" />
+
         <!-- Opt-in only: used for double-tap lock. No screen content is read. -->
         <service
             android:name=".LockAccessibilityService"
@@ -65,5 +85,45 @@
                 android:name="android.accessibilityservice"
                 android:resource="@xml/lock_accessibility_service" />
         </service>
+
+        <receiver
+            android:name=".widgets.builtin.ClockWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_clock_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_clock_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widgets.builtin.BatteryWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_battery_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.ACTION_POWER_CONNECTED" />
+                <action android:name="android.intent.action.ACTION_POWER_DISCONNECTED" />
+                <action android:name="android.intent.action.BATTERY_LOW" />
+                <action android:name="android.intent.action.BATTERY_OKAY" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_battery_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widgets.builtin.NotesWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_notes_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_notes_info" />
+        </receiver>
     </application>
 </manifest>

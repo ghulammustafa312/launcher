@@ -7,6 +7,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.WorkerThread;
 
 import com.yourstudio.aerolauncher.HomePreferences;
+import com.yourstudio.aerolauncher.widgets.WidgetPlacement;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -71,7 +72,7 @@ public final class LayoutBackup {
     static JSONObject toJson(@NonNull HomeLayout layout, @NonNull Context context)
             throws Exception {
         JSONObject root = new JSONObject();
-        root.put("version", 1);
+        root.put("version", 2);
         root.put("columns", HomePreferences.getColumns(context));
         root.put("rows", HomePreferences.getRows(context));
 
@@ -90,6 +91,16 @@ public final class LayoutBackup {
             dock.put(item == null ? JSONObject.NULL : itemToJson(item));
         }
         root.put("dock", dock);
+
+        JSONArray pageWidgets = new JSONArray();
+        for (List<WidgetPlacement> page : layout.pageWidgets) {
+            JSONArray widgets = new JSONArray();
+            for (WidgetPlacement widget : page) {
+                widgets.put(widgetToJson(widget));
+            }
+            pageWidgets.put(widgets);
+        }
+        root.put("pageWidgets", pageWidgets);
 
         JSONArray hidden = new JSONArray();
         for (String key : layout.hiddenAppKeys) {
@@ -136,6 +147,22 @@ public final class LayoutBackup {
             }
         }
 
+        List<List<WidgetPlacement>> pageWidgets = new ArrayList<>();
+        JSONArray widgetsJson = root.optJSONArray("pageWidgets");
+        if (widgetsJson != null) {
+            for (int p = 0; p < widgetsJson.length(); p++) {
+                JSONArray pageJson = widgetsJson.getJSONArray(p);
+                List<WidgetPlacement> list = new ArrayList<>();
+                for (int i = 0; i < pageJson.length(); i++) {
+                    list.add(widgetFromJson(pageJson.getJSONObject(i)));
+                }
+                pageWidgets.add(list);
+            }
+        }
+        while (pageWidgets.size() < pages.size()) {
+            pageWidgets.add(new ArrayList<>());
+        }
+
         Set<String> hidden = new HashSet<>();
         JSONArray hiddenJson = root.optJSONArray("hidden");
         if (hiddenJson != null) {
@@ -143,7 +170,7 @@ public final class LayoutBackup {
                 hidden.add(hiddenJson.getString(i));
             }
         }
-        return new HomeLayout(pages, dock, hidden);
+        return new HomeLayout(pages, dock, pageWidgets, hidden);
     }
 
     @NonNull
@@ -180,5 +207,35 @@ public final class LayoutBackup {
                     keys);
         }
         return HomeItem.app(json.getString("appKey"));
+    }
+
+    @NonNull
+    private static JSONObject widgetToJson(@NonNull WidgetPlacement widget) throws Exception {
+        JSONObject json = new JSONObject();
+        json.put("id", widget.id);
+        json.put("stack", widget.stack);
+        json.put("spanRows", widget.spanRows);
+        json.put("rank", widget.rank);
+        JSONArray ids = new JSONArray();
+        for (Integer id : widget.appWidgetIds) {
+            ids.put(id);
+        }
+        json.put("appWidgetIds", ids);
+        return json;
+    }
+
+    @NonNull
+    private static WidgetPlacement widgetFromJson(@NonNull JSONObject json) throws Exception {
+        List<Integer> ids = new ArrayList<>();
+        JSONArray arr = json.getJSONArray("appWidgetIds");
+        for (int i = 0; i < arr.length(); i++) {
+            ids.add(arr.getInt(i));
+        }
+        return new WidgetPlacement(
+                json.getString("id"),
+                json.optBoolean("stack", ids.size() > 1),
+                ids,
+                json.optInt("spanRows", 2),
+                json.optInt("rank", 0));
     }
 }

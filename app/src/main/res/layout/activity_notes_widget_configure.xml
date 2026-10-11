@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/notes_configure_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:orientation="vertical"
+    android:padding="@dimen/screen_padding">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/widget_notes_configure_title"
+        android:textAppearance="?attr/textAppearanceHeadlineSmall"
+        android:textColor="@color/on_background" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/widget_notes_configure_hint"
+        android:textColor="@color/on_background"
+        android:textSize="14sp" />
+
+    <EditText
+        android:id="@+id/notes_input"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="16dp"
+        android:layout_weight="1"
+        android:background="@drawable/bg_glass_card"
+        android:gravity="top|start"
+        android:hint="@string/widget_notes_hint"
+        android:inputType="textMultiLine|textCapSentences"
+        android:padding="16dp"
+        android:textColor="@color/on_surface"
+        android:textColorHint="#66000000" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/notes_save"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/widget_notes_save"
+        app:cornerRadius="@dimen/corner_radius" />
+</LinearLayout>

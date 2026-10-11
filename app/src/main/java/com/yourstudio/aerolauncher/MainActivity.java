@@ -1,7 +1,9 @@
 package com.yourstudio.aerolauncher;
 
+import android.Manifest;
 import android.content.ClipData;
 import android.content.ClipDescription;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
@@ -27,6 +29,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.splashscreen.SplashScreen;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -51,24 +54,31 @@ import com.yourstudio.aerolauncher.ui.HomeDragListener;
 import com.yourstudio.aerolauncher.ui.HomeGestureRouter;
 import com.yourstudio.aerolauncher.ui.HomePagerAdapter;
 import com.yourstudio.aerolauncher.ui.PageDotsController;
+import com.yourstudio.aerolauncher.ui.QuickPanelController;
 import com.yourstudio.aerolauncher.ui.SearchResultsAdapter;
 import com.yourstudio.aerolauncher.ui.WiggleAnimation;
+import com.yourstudio.aerolauncher.widgets.WidgetHostManager;
+import com.yourstudio.aerolauncher.widgets.WidgetInstaller;
+import com.yourstudio.aerolauncher.widgets.WidgetPlacement;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Home launcher: workspace, App Library, search, and gestures.
+ * Home launcher: workspace, widgets, App Library, search, quick panel, and gestures.
  */
 public class MainActivity extends AppCompatActivity
         implements AppRepository.Listener,
         LayoutRepository.Listener,
         AppGridAdapter.Callbacks,
-        HomeGestureRouter.Callbacks {
+        HomeGestureRouter.Callbacks,
+        HomePagerAdapter.WidgetCallbacks {
 
     private AppRepository appRepository;
     private LayoutRepository layoutRepository;
+    private WidgetHostManager widgetHostManager;
+    private WidgetInstaller widgetInstaller;
     private HomePagerAdapter pagerAdapter;
     private PageDotsController pageDots;
     private ViewPager2 homePager;
@@ -79,6 +89,7 @@ public class MainActivity extends AppCompatActivity
     private EditText searchInput;
     private SearchResultsAdapter searchAdapter;
     private HomeGestureRouter gestureRouter;
+    private QuickPanelController quickPanel;
     private final Map<String, AppInfo> appsByKey = new HashMap<>();
     private boolean keepSplash = true;
     private boolean editMode;
@@ -86,9 +97,34 @@ public class MainActivity extends AppCompatActivity
     private final Handler pageFlipHandler = new Handler(Looper.getMainLooper());
     private Runnable pendingPageFlip;
 
+    private int pendingWidgetPage = 0;
+    @Nullable
+    private WidgetPlacement pendingStackTarget;
+
     private final ActivityResultLauncher<Intent> homeRoleLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result ->
                     updateDefaultLauncherBanner());
+
+    private final ActivityResultLauncher<Intent> bindWidgetLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+                if (widgetInstaller != null) {
+                    widgetInstaller.onBindResult(result.getResultCode(), result.getData());
+                }
+            });
+
+    private final ActivityResultLauncher<Intent> configureWidgetLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+                if (widgetInstaller != null) {
+                    widgetInstaller.onConfigureResult(result.getResultCode(), result.getData());
+                }
+            });
+
+    private final ActivityResultLauncher<String> cameraPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
+                if (quickPanel != null) {
+                    quickPanel.onCameraPermissionResult(Boolean.TRUE.equals(granted));
+                }
+            });
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -102,6 +138,10 @@ public class MainActivity extends AppCompatActivity
         AeroLauncherApp app = (AeroLauncherApp) getApplication();
         appRepository = app.getAppRepository();
         layoutRepository = app.getLayoutRepository();
+        widgetHostManager = app.getWidgetHostManager();
+        widgetHostManager.startListening();
+        widgetInstaller = new WidgetInstaller(
+                widgetHostManager, bindWidgetLauncher, configureWidgetLauncher);
 
         homePager = findViewById(R.id.home_pager);
         dockRow = findViewById(R.id.dock_row);
@@ -110,6 +150,8 @@ public class MainActivity extends AppCompatActivity
         pageDots = new PageDotsController(findViewById(R.id.page_dots));
         pagerAdapter = new HomePagerAdapter(appRepository.getIconCache(), appsByKey);
         pagerAdapter.setCallbacks(this);
+        pagerAdapter.setWidgetCallbacks(this);
+        pagerAdapter.setWidgetHostManager(widgetHostManager);
         homePager.setAdapter(pagerAdapter);
         homePager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
             @Override
@@ -131,6 +173,10 @@ public class MainActivity extends AppCompatActivity
         });
 
         setupSearchUi();
+        quickPanel = new QuickPanelController(
+                this,
+                findViewById(R.id.quick_panel_overlay),
+                () -> cameraPermissionLauncher.launch(Manifest.permission.CAMERA));
         gestureRouter = new HomeGestureRouter(findViewById(R.id.root), this);
 
         findViewById(R.id.set_default_launcher).setOnClickListener(v ->
@@ -141,6 +187,10 @@ public class MainActivity extends AppCompatActivity
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
+                if (quickPanel != null && quickPanel.isOpen()) {
+                    quickPanel.close();
+                    return;
+                }
                 if (searchOpen) {
                     closeSearch();
                     return;
@@ -202,6 +252,18 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        widgetHostManager.startListening();
+    }
+
+    @Override
+    protected void onStop() {
+        widgetHostManager.stopListening();
+        super.onStop();
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
         updateDefaultLauncherBanner();
@@ -219,6 +281,9 @@ public class MainActivity extends AppCompatActivity
     protected void onDestroy() {
         appRepository.removeListener(this);
         layoutRepository.removeListener(this);
+        if (widgetInstaller != null) {
+            widgetInstaller.cancelPending();
+        }
         super.onDestroy();
     }
 
@@ -251,7 +316,7 @@ public class MainActivity extends AppCompatActivity
     private void bindLayout(@NonNull HomeLayout layout) {
         int columns = HomePreferences.getColumns(this);
         int previousPage = homePager.getCurrentItem();
-        pagerAdapter.setPages(layout.pages, columns);
+        pagerAdapter.setPages(layout.pages, layout.pageWidgets, columns);
         int pageCount = pagerAdapter.getPageCount();
         pageDots.setPageCount(pageCount);
         if (previousPage >= pageCount) {
@@ -351,7 +416,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void openSearch() {
-        if (editMode) {
+        if (editMode || (quickPanel != null && quickPanel.isOpen())) {
             return;
         }
         searchOpen = true;
@@ -388,7 +453,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void openLibraryPage() {
-        if (editMode || searchOpen) {
+        if (editMode || searchOpen || (quickPanel != null && quickPanel.isOpen())) {
             return;
         }
         homePager.setCurrentItem(pagerAdapter.getLibraryPageIndex(), true);
@@ -399,7 +464,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void handleDoubleTapLock() {
-        if (editMode || searchOpen) {
+        if (editMode || searchOpen || (quickPanel != null && quickPanel.isOpen())) {
             return;
         }
         if (FeaturePreferences.canLockScreen(this)) {
@@ -413,12 +478,19 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public boolean gesturesEnabled() {
-        return !editMode && !searchOpen;
+        return !editMode && !searchOpen && (quickPanel == null || !quickPanel.isOpen());
     }
 
     @Override
     public void onSwipeDownSearch() {
         openSearch();
+    }
+
+    @Override
+    public void onSwipeDownQuickPanel() {
+        if (!editMode && !searchOpen && quickPanel != null) {
+            quickPanel.open();
+        }
     }
 
     @Override
@@ -433,7 +505,7 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onPinchSettings() {
-        if (!editMode && !searchOpen) {
+        if (!editMode && !searchOpen && (quickPanel == null || !quickPanel.isOpen())) {
             openLauncherSettings();
         }
     }
@@ -441,6 +513,120 @@ public class MainActivity extends AppCompatActivity
     @Override
     public boolean isEditMode() {
         return editMode;
+    }
+
+    @Override
+    public void onAddWidget(int pageIndex) {
+        pendingWidgetPage = pageIndex;
+        pendingStackTarget = null;
+        showWidgetPicker();
+    }
+
+    @Override
+    public void onRemoveWidget(@NonNull WidgetPlacement placement) {
+        for (Integer id : placement.appWidgetIds) {
+            widgetHostManager.deleteAppWidgetId(id);
+        }
+        layoutRepository.removeWidget(placement.id);
+    }
+
+    @Override
+    public void onResizeWidget(@NonNull WidgetPlacement placement, int spanRows) {
+        WidgetPlacement updated = placement.copy();
+        updated.spanRows = spanRows;
+        layoutRepository.updateWidget(updated);
+    }
+
+    @Override
+    public void onWidgetLongClick(
+            int pageIndex,
+            @NonNull WidgetPlacement placement,
+            @NonNull View anchor) {
+        if (!editMode) {
+            setEditMode(true);
+        }
+        PopupMenu menu = new PopupMenu(this, anchor);
+        menu.getMenu().add(0, 1, 0, R.string.widget_add_to_stack);
+        menu.getMenu().add(0, 2, 1, R.string.widget_resize_taller);
+        menu.getMenu().add(0, 3, 2, R.string.widget_resize_shorter);
+        menu.getMenu().add(0, 4, 3, R.string.widget_remove);
+        menu.setOnMenuItemClickListener(item -> {
+            int id = item.getItemId();
+            if (id == 1) {
+                pendingWidgetPage = pageIndex;
+                pendingStackTarget = placement;
+                showWidgetPicker();
+                return true;
+            }
+            if (id == 2) {
+                onResizeWidget(placement, Math.min(4, placement.spanRows + 1));
+                return true;
+            }
+            if (id == 3) {
+                onResizeWidget(placement, Math.max(2, placement.spanRows - 1));
+                return true;
+            }
+            if (id == 4) {
+                onRemoveWidget(placement);
+                return true;
+            }
+            return false;
+        });
+        menu.show();
+    }
+
+    private void showWidgetPicker() {
+        List<WidgetInstaller.Option> options = widgetInstaller.listOptions(this);
+        CharSequence[] labels = new CharSequence[options.size()];
+        for (int i = 0; i < options.size(); i++) {
+            WidgetInstaller.Option option = options.get(i);
+            labels[i] = option.builtin
+                    ? option.label
+                    : option.label + " · " + option.provider.getPackageName();
+        }
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.widget_pick_title)
+                .setItems(labels, (dialog, which) ->
+                        beginInstall(options.get(which).provider))
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
+    private void beginInstall(@NonNull ComponentName provider) {
+        widgetInstaller.install(provider, new WidgetInstaller.Callbacks() {
+            @Override
+            public void onWidgetReady(int appWidgetId) {
+                placeReadyWidget(appWidgetId);
+            }
+
+            @Override
+            public void onWidgetFailed(@NonNull String reason) {
+                int message = "configure".equals(reason)
+                        ? R.string.widget_configure_failed
+                        : R.string.widget_bind_denied;
+                Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
+                pendingStackTarget = null;
+            }
+        });
+    }
+
+    private void placeReadyWidget(int appWidgetId) {
+        if (pendingStackTarget != null) {
+            WidgetPlacement stack = pendingStackTarget.copy();
+            stack.appWidgetIds.add(appWidgetId);
+            // Reconstruct as stack placement (stack flag + same id).
+            WidgetPlacement updated = new WidgetPlacement(
+                    stack.id,
+                    true,
+                    stack.appWidgetIds,
+                    stack.spanRows,
+                    stack.rank);
+            layoutRepository.updateWidget(updated);
+            pendingStackTarget = null;
+            return;
+        }
+        WidgetPlacement placement = WidgetPlacement.single(appWidgetId, 2, 0);
+        layoutRepository.addWidgetToPage(pendingWidgetPage, placement);
     }
 
     @Override
@@ -468,7 +654,6 @@ public class MainActivity extends AppCompatActivity
         pendingPageFlip = () -> {
             pendingPageFlip = null;
             int next = homePager.getCurrentItem() + delta;
-            // Do not drag onto the App Library page.
             int max = Math.max(0, pagerAdapter.getLibraryPageIndex() - 1);
             if (next >= 0 && next <= max) {
                 homePager.setCurrentItem(next, true);
@@ -574,6 +759,10 @@ public class MainActivity extends AppCompatActivity
 
     private void updateDefaultLauncherBanner() {
         boolean isDefault = DefaultLauncherHelper.isDefaultLauncher(this);
-        defaultBanner.setVisibility(isDefault || editMode || searchOpen ? View.GONE : View.VISIBLE);
+        boolean hide = isDefault
+                || editMode
+                || searchOpen
+                || (quickPanel != null && quickPanel.isOpen());
+        defaultBanner.setVisibility(hide ? View.GONE : View.VISIBLE);
     }
 }

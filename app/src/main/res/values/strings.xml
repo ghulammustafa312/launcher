@@ -13,7 +13,7 @@
     <string name="settings_backup">Layout backup</string>
     <string name="settings_backup_hint">Save or restore your home layout with the system file picker. No storage permission is used.</string>
     <string name="settings_gestures">Gestures and lock</string>
-    <string name="settings_gestures_hint">Swipe down to search, swipe up for App Library, pinch for settings. Double-tap lock needs an optional AccessibilityService you control.</string>
+    <string name="settings_gestures_hint">Swipe down from the top edge for the quick panel, swipe down elsewhere to search, swipe up for App Library, pinch for settings. Double-tap lock needs an optional AccessibilityService you control.</string>
     <string name="settings_lock_setup">Set up double-tap lock</string>
     <string name="backup_layout">Backup layout</string>
     <string name="restore_layout">Restore layout</string>
@@ -77,4 +77,38 @@
     <string name="lock_opt_in_enable">Continue to Accessibility settings</string>
     <string name="lock_opt_in_not_now">Not now</string>
     <string name="lock_failed">Could not lock the screen</string>
+
+    <string name="widget_clock_name">Aero Clock</string>
+    <string name="widget_battery_name">Aero Battery</string>
+    <string name="widget_notes_name">Aero Notes</string>
+    <string name="widget_notes_title">Notes</string>
+    <string name="widget_notes_hint">Write a note…</string>
+    <string name="widget_notes_empty">Tap to add a note</string>
+    <string name="widget_notes_configure_title">Local note</string>
+    <string name="widget_notes_configure_hint">Stored only on this device.</string>
+    <string name="widget_notes_save">Save note</string>
+    <string name="widget_battery_charging">Charging</string>
+    <string name="widget_battery_discharging">Battery</string>
+    <string name="widget_battery_full">Full</string>
+    <string name="widget_battery_unknown">Battery</string>
+
+    <string name="add_widget">Add widget</string>
+    <string name="widget_pick_title">Add a widget</string>
+    <string name="widget_section_builtin">Aero widgets</string>
+    <string name="widget_section_system">Installed widgets</string>
+    <string name="widget_add_to_stack">Add to stack</string>
+    <string name="widget_resize_taller">Make taller</string>
+    <string name="widget_resize_shorter">Make shorter</string>
+    <string name="widget_remove">Remove widget</string>
+    <string name="widget_bind_denied">Widget permission denied</string>
+    <string name="widget_configure_failed">Could not configure widget</string>
+
+    <string name="quick_panel_title">Quick panel</string>
+    <string name="quick_panel_flashlight">Flashlight</string>
+    <string name="quick_panel_brightness">Brightness</string>
+    <string name="quick_panel_wifi">Wi‑Fi</string>
+    <string name="quick_panel_bluetooth">Bluetooth</string>
+    <string name="quick_panel_sound">Sound</string>
+    <string name="quick_panel_camera_permission">Camera permission is needed for the flashlight</string>
+    <string name="quick_panel_brightness_permission">Allow modifying system settings to change brightness</string>
 </resources>

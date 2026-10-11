@@ -112,4 +112,10 @@
         layout="@layout/overlay_search"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
+
+    <include
+        android:id="@+id/quick_panel_overlay"
+        layout="@layout/overlay_quick_panel"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 </FrameLayout>

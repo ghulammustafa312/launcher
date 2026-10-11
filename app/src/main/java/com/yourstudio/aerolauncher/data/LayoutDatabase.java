@@ -9,7 +9,7 @@ import androidx.room.RoomDatabase;
 
 @Database(
         entities = {LayoutItemEntity.class, HiddenAppEntity.class},
-        version = 1,
+        version = 2,
         exportSchema = false)
 public abstract class LayoutDatabase extends RoomDatabase {
 
