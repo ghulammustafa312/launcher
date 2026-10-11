@@ -48,4 +48,6 @@ dependencies {
     implementation(libs.splashscreen)
     implementation(libs.recyclerview)
     implementation(libs.viewpager2)
+    implementation(libs.room.runtime)
+    annotationProcessor(libs.room.compiler)
 }

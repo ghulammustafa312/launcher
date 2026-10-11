@@ -6,6 +6,7 @@ constraintlayout = "2.2.1"
 splashscreen = "1.2.0"
 recyclerview = "1.4.0"
 viewpager2 = "1.1.0"
+room = "2.8.5"
 compileSdk = "36"
 minSdk = "24"
 targetSdk = "36"
@@ -17,6 +18,8 @@ constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayo
 splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "splashscreen" }
 recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version.ref = "recyclerview" }
 viewpager2 = { group = "androidx.viewpager2", name = "viewpager2", version.ref = "viewpager2" }
+room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -10,6 +10,14 @@
     <string name="settings_palette">Palette</string>
     <string name="settings_grid">Home grid</string>
     <string name="settings_grid_hint">Default is 4 columns by 6 rows. Changes apply when you return home.</string>
+    <string name="settings_backup">Layout backup</string>
+    <string name="settings_backup_hint">Save or restore your home layout with the system file picker. No storage permission is used.</string>
+    <string name="backup_layout">Backup layout</string>
+    <string name="restore_layout">Restore layout</string>
+    <string name="backup_success">Layout backed up</string>
+    <string name="restore_success">Layout restored</string>
+    <string name="backup_failed">Backup failed</string>
+    <string name="restore_failed">Restore failed</string>
     <string name="grid_columns">Columns: %1$d</string>
     <string name="grid_rows">Rows: %1$d</string>
     <string name="theme_light">Light</string>
@@ -21,4 +29,13 @@
     <string name="color_accent_orange">Accent orange</string>
     <string name="set_default_launcher">Set as default</string>
     <string name="set_default_launcher_hint">Set Aero Launcher as your Home app to use the dock and pages.</string>
+    <string name="edit_done">Done</string>
+    <string name="remove_from_home">Remove</string>
+    <string name="action_app_info">App info</string>
+    <string name="action_uninstall">Uninstall</string>
+    <string name="action_hide">Hide</string>
+    <string name="action_rename_folder">Rename folder</string>
+    <string name="app_hidden">App hidden from home</string>
+    <string name="folder_name_hint">Folder name</string>
+    <string name="folder_done">Done</string>
 </resources>

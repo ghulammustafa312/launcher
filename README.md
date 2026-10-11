@@ -51,6 +51,8 @@ A published package name cannot be changed later.
 - Installed apps via `LauncherApps` on a background thread, icon cache, package callbacks
 - ViewPager2 pages, page dots, glass dock (4 apps)
 - Scale-up open animation; “Set as default” via `RoleManager` (API 29+) or Home settings
+- Edit mode (wiggle, remove, drag across pages/dock), folders, App info / Uninstall / Hide
+- Layout saved in Room; backup/restore via the system file picker (no storage permission)
 
 ## Wireless debugging (your device)
 

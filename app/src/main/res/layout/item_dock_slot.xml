@@ -3,7 +3,7 @@
     android:layout_width="0dp"
     android:layout_height="match_parent"
     android:layout_weight="1"
-    android:padding="8dp">
+    android:padding="6dp">
 
     <ImageView
         android:id="@+id/dock_icon"
@@ -12,4 +12,14 @@
         android:layout_gravity="center"
         android:contentDescription="@null"
         android:scaleType="fitCenter" />
+
+    <ImageButton
+        android:id="@+id/dock_remove"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_gravity="top|end"
+        android:background="@android:color/transparent"
+        android:contentDescription="@string/remove_from_home"
+        android:src="@drawable/ic_remove_badge"
+        android:visibility="gone" />
 </FrameLayout>
