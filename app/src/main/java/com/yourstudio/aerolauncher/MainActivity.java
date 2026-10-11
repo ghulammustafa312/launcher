@@ -2,14 +2,20 @@ package com.yourstudio.aerolauncher;
 
 import android.content.ClipData;
 import android.content.ClipDescription;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.DragEvent;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -23,6 +29,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.splashscreen.SplashScreen;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.google.android.material.button.MaterialButton;
@@ -35,12 +43,15 @@ import com.yourstudio.aerolauncher.layout.HomeItem;
 import com.yourstudio.aerolauncher.layout.HomeLayout;
 import com.yourstudio.aerolauncher.layout.ItemLocation;
 import com.yourstudio.aerolauncher.layout.LayoutRepository;
+import com.yourstudio.aerolauncher.search.SearchController;
 import com.yourstudio.aerolauncher.ui.AppGridAdapter;
 import com.yourstudio.aerolauncher.ui.EdgeToEdge;
 import com.yourstudio.aerolauncher.ui.FolderPopup;
 import com.yourstudio.aerolauncher.ui.HomeDragListener;
+import com.yourstudio.aerolauncher.ui.HomeGestureRouter;
 import com.yourstudio.aerolauncher.ui.HomePagerAdapter;
 import com.yourstudio.aerolauncher.ui.PageDotsController;
+import com.yourstudio.aerolauncher.ui.SearchResultsAdapter;
 import com.yourstudio.aerolauncher.ui.WiggleAnimation;
 
 import java.util.HashMap;
@@ -48,10 +59,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Home screen launcher with edit mode, folders, and Room-backed layout.
+ * Home launcher: workspace, App Library, search, and gestures.
  */
 public class MainActivity extends AppCompatActivity
-        implements AppRepository.Listener, LayoutRepository.Listener, AppGridAdapter.Callbacks {
+        implements AppRepository.Listener,
+        LayoutRepository.Listener,
+        AppGridAdapter.Callbacks,
+        HomeGestureRouter.Callbacks {
 
     private AppRepository appRepository;
     private LayoutRepository layoutRepository;
@@ -61,9 +75,14 @@ public class MainActivity extends AppCompatActivity
     private LinearLayout dockRow;
     private MaterialCardView defaultBanner;
     private MaterialButton editDone;
+    private View searchOverlay;
+    private EditText searchInput;
+    private SearchResultsAdapter searchAdapter;
+    private HomeGestureRouter gestureRouter;
     private final Map<String, AppInfo> appsByKey = new HashMap<>();
     private boolean keepSplash = true;
     private boolean editMode;
+    private boolean searchOpen;
     private final Handler pageFlipHandler = new Handler(Looper.getMainLooper());
     private Runnable pendingPageFlip;
 
@@ -98,7 +117,6 @@ public class MainActivity extends AppCompatActivity
                 pageDots.setSelected(position);
             }
         });
-        // Flip pages when a drag hovers near the left/right edge.
         homePager.setOnDragListener((v, event) -> {
             if (!editMode) {
                 return false;
@@ -112,15 +130,21 @@ public class MainActivity extends AppCompatActivity
             return true;
         });
 
+        setupSearchUi();
+        gestureRouter = new HomeGestureRouter(findViewById(R.id.root), this);
+
         findViewById(R.id.set_default_launcher).setOnClickListener(v ->
                 DefaultLauncherHelper.requestDefaultLauncher(this, homeRoleLauncher));
-        findViewById(R.id.open_settings).setOnClickListener(v ->
-                startActivity(new Intent(this, SettingsActivity.class)));
+        findViewById(R.id.open_settings).setOnClickListener(v -> openLauncherSettings());
         editDone.setOnClickListener(v -> setEditMode(false));
 
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
+                if (searchOpen) {
+                    closeSearch();
+                    return;
+                }
                 if (editMode) {
                     setEditMode(false);
                     return;
@@ -138,10 +162,49 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        if (gestureRouter != null) {
+            gestureRouter.observe(ev);
+        }
+        return super.dispatchTouchEvent(ev);
+    }
+
+    private void setupSearchUi() {
+        searchOverlay = findViewById(R.id.search_overlay);
+        searchInput = searchOverlay.findViewById(R.id.search_input);
+        RecyclerView results = searchOverlay.findViewById(R.id.search_results);
+        searchAdapter = new SearchResultsAdapter(appRepository.getIconCache(), this::closeSearch);
+        results.setLayoutManager(new LinearLayoutManager(this));
+        results.setAdapter(searchAdapter);
+        searchOverlay.findViewById(R.id.search_close).setOnClickListener(v -> closeSearch());
+        searchInput.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                runSearch(s != null ? s.toString() : "");
+            }
+        });
+        searchInput.setOnEditorActionListener((v, actionId, event) -> {
+            String query = searchInput.getText() != null ? searchInput.getText().toString() : "";
+            if (!query.trim().isEmpty()) {
+                SearchController.openWebSearch(this, query);
+                closeSearch();
+            }
+            return true;
+        });
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
         updateDefaultLauncherBanner();
-        // Re-sync only when the grid capacity changed in Settings.
         HomeLayout current = layoutRepository.getLayout();
         int capacity = HomePreferences.pageCapacity(this);
         if (!appsByKey.isEmpty()
@@ -149,6 +212,7 @@ public class MainActivity extends AppCompatActivity
                 && current.pages.get(0).size() != capacity) {
             layoutRepository.loadAndSync(appRepository.getApps());
         }
+        refreshLibraryData();
     }
 
     @Override
@@ -165,6 +229,7 @@ public class MainActivity extends AppCompatActivity
             appsByKey.put(appInfo.key, appInfo);
         }
         layoutRepository.loadAndSync(apps);
+        refreshLibraryData();
     }
 
     @Override
@@ -172,6 +237,15 @@ public class MainActivity extends AppCompatActivity
         keepSplash = false;
         bindLayout(layout);
         updateDefaultLauncherBanner();
+        refreshLibraryData();
+    }
+
+    private void refreshLibraryData() {
+        if (pagerAdapter != null) {
+            pagerAdapter.setLibraryData(
+                    appRepository.getApps(),
+                    layoutRepository.getLayout().hiddenAppKeys);
+        }
     }
 
     private void bindLayout(@NonNull HomeLayout layout) {
@@ -185,6 +259,7 @@ public class MainActivity extends AppCompatActivity
         }
         pageDots.setSelected(homePager.getCurrentItem());
         bindDock(layout);
+        refreshLibraryData();
     }
 
     private void ensureDockSlots() {
@@ -275,6 +350,94 @@ public class MainActivity extends AppCompatActivity
         updateDefaultLauncherBanner();
     }
 
+    private void openSearch() {
+        if (editMode) {
+            return;
+        }
+        searchOpen = true;
+        searchOverlay.setVisibility(View.VISIBLE);
+        searchOverlay.setAlpha(0f);
+        searchOverlay.animate().alpha(1f).setDuration(180).start();
+        searchInput.requestFocus();
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.showSoftInput(searchInput, InputMethodManager.SHOW_IMPLICIT);
+        }
+        runSearch(searchInput.getText() != null ? searchInput.getText().toString() : "");
+    }
+
+    private void closeSearch() {
+        searchOpen = false;
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.hideSoftInputFromWindow(searchInput.getWindowToken(), 0);
+        }
+        searchOverlay.animate().alpha(0f).setDuration(150).withEndAction(() -> {
+            searchOverlay.setVisibility(View.GONE);
+            searchInput.setText("");
+        }).start();
+    }
+
+    private void runSearch(@NonNull String query) {
+        SearchController.Results results = SearchController.search(
+                this,
+                query,
+                appRepository.getApps(),
+                layoutRepository.getLayout().hiddenAppKeys);
+        searchAdapter.submit(results);
+    }
+
+    private void openLibraryPage() {
+        if (editMode || searchOpen) {
+            return;
+        }
+        homePager.setCurrentItem(pagerAdapter.getLibraryPageIndex(), true);
+    }
+
+    private void openLauncherSettings() {
+        startActivity(new Intent(this, SettingsActivity.class));
+    }
+
+    private void handleDoubleTapLock() {
+        if (editMode || searchOpen) {
+            return;
+        }
+        if (FeaturePreferences.canLockScreen(this)) {
+            if (!LockAccessibilityService.lockScreen()) {
+                Toast.makeText(this, R.string.lock_failed, Toast.LENGTH_SHORT).show();
+            }
+            return;
+        }
+        startActivity(new Intent(this, LockOptInActivity.class));
+    }
+
+    @Override
+    public boolean gesturesEnabled() {
+        return !editMode && !searchOpen;
+    }
+
+    @Override
+    public void onSwipeDownSearch() {
+        openSearch();
+    }
+
+    @Override
+    public void onSwipeUpLibrary() {
+        openLibraryPage();
+    }
+
+    @Override
+    public void onDoubleTapLock() {
+        handleDoubleTapLock();
+    }
+
+    @Override
+    public void onPinchSettings() {
+        if (!editMode && !searchOpen) {
+            openLauncherSettings();
+        }
+    }
+
     @Override
     public boolean isEditMode() {
         return editMode;
@@ -282,7 +445,6 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onDragStarted() {
-        // Page edge auto-flip handles cross-page moves while dragging.
     }
 
     private void maybeFlipPageForDrag(float x, int width) {
@@ -306,7 +468,9 @@ public class MainActivity extends AppCompatActivity
         pendingPageFlip = () -> {
             pendingPageFlip = null;
             int next = homePager.getCurrentItem() + delta;
-            if (next >= 0 && next < pagerAdapter.getPageCount()) {
+            // Do not drag onto the App Library page.
+            int max = Math.max(0, pagerAdapter.getLibraryPageIndex() - 1);
+            if (next >= 0 && next <= max) {
                 homePager.setCurrentItem(next, true);
             }
         };
@@ -410,6 +574,6 @@ public class MainActivity extends AppCompatActivity
 
     private void updateDefaultLauncherBanner() {
         boolean isDefault = DefaultLauncherHelper.isDefaultLauncher(this);
-        defaultBanner.setVisibility(isDefault || editMode ? View.GONE : View.VISIBLE);
+        defaultBanner.setVisibility(isDefault || editMode || searchOpen ? View.GONE : View.VISIBLE);
     }
 }

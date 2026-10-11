@@ -154,16 +154,22 @@ public final class AppRepository {
             List<UserHandle> profiles = userManager.getUserProfiles();
             for (UserHandle user : profiles) {
                 List<LauncherActivityInfo> activities = launcherApps.getActivityList(null, user);
+                PackageManager pm = appContext.getPackageManager();
                 for (LauncherActivityInfo info : activities) {
                     // Skip this launcher itself on the home grid.
-                    if (appContext.getPackageName().equals(info.getComponentName().getPackageName())) {
+                    String packageName = info.getComponentName().getPackageName();
+                    if (appContext.getPackageName().equals(packageName)) {
                         continue;
                     }
+                    CharSequence label = info.getLabel();
+                    int categoryCode = AppInfo.readCategory(pm, packageName);
                     result.add(new AppInfo(
-                            info.getLabel(),
+                            label,
                             info.getComponentName(),
                             info.getUser(),
-                            info));
+                            info,
+                            AppCategory.from(packageName, label, categoryCode),
+                            AppInfo.readInstallTime(pm, packageName)));
                 }
             }
             if (!result.isEmpty()) {
@@ -195,7 +201,15 @@ public final class AppRepository {
                     info.activityInfo.packageName,
                     info.activityInfo.name);
             CharSequence label = info.loadLabel(pm);
-            result.add(new AppInfo(label, component, user, null));
+            String packageName = info.activityInfo.packageName;
+            int categoryCode = AppInfo.readCategory(pm, packageName);
+            result.add(new AppInfo(
+                    label,
+                    component,
+                    user,
+                    null,
+                    AppCategory.from(packageName, label, categoryCode),
+                    AppInfo.readInstallTime(pm, packageName)));
         }
         return result;
     }

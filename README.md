@@ -53,6 +53,9 @@ A published package name cannot be changed later.
 - Scale-up open animation; “Set as default” via `RoleManager` (API 29+) or Home settings
 - Edit mode (wiggle, remove, drag across pages/dock), folders, App info / Uninstall / Hide
 - Layout saved in Room; backup/restore via the system file picker (no storage permission)
+- App Library page (categories, recently added, A–Z fast scroller)
+- Swipe-down search (apps, settings shortcuts, web fallback; no contacts)
+- Gestures: swipe up library, pinch settings, opt-in AccessibilityService double-tap lock
 
 ## Wireless debugging (your device)
 

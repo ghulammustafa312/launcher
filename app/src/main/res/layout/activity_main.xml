@@ -6,6 +6,7 @@
     android:layout_height="match_parent">
 
     <LinearLayout
+        android:id="@+id/home_content"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
@@ -105,4 +106,10 @@
             android:scaleType="centerInside"
             android:src="@drawable/ic_settings_gear" />
     </LinearLayout>
+
+    <include
+        android:id="@+id/search_overlay"
+        layout="@layout/overlay_search"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 </FrameLayout>

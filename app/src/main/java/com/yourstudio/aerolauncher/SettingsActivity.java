@@ -1,5 +1,6 @@
 package com.yourstudio.aerolauncher;
 
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.widget.RadioButton;
@@ -86,6 +87,9 @@ public class SettingsActivity extends AppCompatActivity {
         findViewById(R.id.columns_plus).setOnClickListener(v -> adjustGrid(1, 0));
         findViewById(R.id.rows_minus).setOnClickListener(v -> adjustGrid(0, -1));
         findViewById(R.id.rows_plus).setOnClickListener(v -> adjustGrid(0, 1));
+
+        findViewById(R.id.setup_lock).setOnClickListener(v ->
+                startActivity(new Intent(this, LockOptInActivity.class)));
 
         findViewById(R.id.backup_layout).setOnClickListener(v ->
                 createBackup.launch(LayoutBackup.DEFAULT_FILE_NAME));
