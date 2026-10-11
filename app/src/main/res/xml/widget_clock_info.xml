@@ -3,7 +3,7 @@
     android:initialLayout="@layout/widget_clock"
     android:minWidth="180dp"
     android:minHeight="80dp"
-    android:previewImage="@mipmap/ic_launcher"
+    android:previewImage="@drawable/ic_launcher"
     android:resizeMode="horizontal|vertical"
     android:updatePeriodMillis="60000"
     android:widgetCategory="home_screen" />

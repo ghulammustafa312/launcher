@@ -28,6 +28,9 @@ import com.yourstudio.aerolauncher.R;
  */
 public final class QuickPanelController {
 
+    /** Still honored by the system; removed from the SDK 36 stub of {@link Settings.Panel}. */
+    private static final String PANEL_BLUETOOTH = "android.settings.panel.action.BLUETOOTH";
+
     public interface PermissionBridge {
         void requestCameraPermission();
     }
@@ -88,7 +91,7 @@ public final class QuickPanelController {
         MaterialButton bluetooth = overlay.findViewById(R.id.quick_bluetooth);
         MaterialButton sound = overlay.findViewById(R.id.quick_sound);
         wifi.setOnClickListener(v -> openPanel(Settings.Panel.ACTION_WIFI));
-        bluetooth.setOnClickListener(v -> openPanel(Settings.Panel.ACTION_BLUETOOTH));
+        bluetooth.setOnClickListener(v -> openPanel(PANEL_BLUETOOTH));
         sound.setOnClickListener(v -> openPanel(Settings.Panel.ACTION_VOLUME));
     }
 
@@ -221,26 +224,23 @@ public final class QuickPanelController {
 
     private void openPanel(@NonNull String action) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-            // Panels arrived in Q; fall back to full settings pages.
-            if (Settings.Panel.ACTION_WIFI.equals(action)) {
-                activity.startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
-            } else if (Settings.Panel.ACTION_BLUETOOTH.equals(action)) {
-                activity.startActivity(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS));
-            } else {
-                activity.startActivity(new Intent(Settings.ACTION_SOUND_SETTINGS));
-            }
+            startPanelFallback(action);
             return;
         }
         try {
             activity.startActivity(new Intent(action));
         } catch (Exception e) {
-            if (Settings.Panel.ACTION_WIFI.equals(action)) {
-                activity.startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
-            } else if (Settings.Panel.ACTION_BLUETOOTH.equals(action)) {
-                activity.startActivity(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS));
-            } else {
-                activity.startActivity(new Intent(Settings.ACTION_SOUND_SETTINGS));
-            }
+            startPanelFallback(action);
+        }
+    }
+
+    private void startPanelFallback(@NonNull String action) {
+        if (Settings.Panel.ACTION_WIFI.equals(action)) {
+            activity.startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
+        } else if (PANEL_BLUETOOTH.equals(action)) {
+            activity.startActivity(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS));
+        } else {
+            activity.startActivity(new Intent(Settings.ACTION_SOUND_SETTINGS));
         }
     }
 }
