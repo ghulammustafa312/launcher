@@ -25,4 +25,7 @@
 
     <!-- Icon placeholder colors -->
     <color name="ic_launcher_background">#1B1F3B</color>
+
+    <!-- Labels on top of wallpaper -->
+    <color name="home_label">#F2FFFFFF</color>
 </resources>

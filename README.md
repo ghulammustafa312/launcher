@@ -43,16 +43,14 @@ Toolchain pins:
 
 A published package name cannot be changed later.
 
-## What’s in this step (Prompt 1)
+## What’s included so far
 
-- Design system: midnight indigo / violet / aqua / accent orange, light / dark / auto
-- Inter font (SIL OFL 1.1 — see `ASSET_LICENSES.md`)
-- Glass card / panel styles, shared 24dp corners
-- SplashScreen API splash with placeholder icon
-- Settings activity shell (theme mode + palette swatches)
-- Edge-to-edge via `WindowInsets`
-
-Home-launcher intent filters and app grid come in later prompts.
+- Design system, splash, settings (theme + adjustable 4×6 grid)
+- Real launcher: `HOME` / `MAIN` / `DEFAULT`, `singleTask`
+- `<queries>` for `MAIN`/`LAUNCHER` (no `QUERY_ALL_PACKAGES`)
+- Installed apps via `LauncherApps` on a background thread, icon cache, package callbacks
+- ViewPager2 pages, page dots, glass dock (4 apps)
+- Scale-up open animation; “Set as default” via `RoleManager` (API 29+) or Home settings
 
 ## Wireless debugging (your device)
 

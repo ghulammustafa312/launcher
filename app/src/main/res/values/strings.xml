@@ -8,6 +8,10 @@
     <string name="settings_appearance">Appearance</string>
     <string name="settings_appearance_hint">Choose light, dark, or follow the system (auto).</string>
     <string name="settings_palette">Palette</string>
+    <string name="settings_grid">Home grid</string>
+    <string name="settings_grid_hint">Default is 4 columns by 6 rows. Changes apply when you return home.</string>
+    <string name="grid_columns">Columns: %1$d</string>
+    <string name="grid_rows">Rows: %1$d</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
     <string name="theme_auto">Auto</string>
@@ -15,4 +19,6 @@
     <string name="color_violet">Violet</string>
     <string name="color_aqua">Aqua</string>
     <string name="color_accent_orange">Accent orange</string>
+    <string name="set_default_launcher">Set as default</string>
+    <string name="set_default_launcher_hint">Set Aero Launcher as your Home app to use the dock and pages.</string>
 </resources>

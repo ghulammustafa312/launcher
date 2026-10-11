@@ -8,4 +8,6 @@
     <dimen name="screen_padding">24dp</dimen>
     <dimen name="card_padding">20dp</dimen>
     <dimen name="swatch_size">40dp</dimen>
+    <dimen name="app_icon_size">52dp</dimen>
+    <dimen name="dock_height">72dp</dimen>
 </resources>

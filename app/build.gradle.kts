@@ -46,4 +46,6 @@ dependencies {
     implementation(libs.material)
     implementation(libs.constraintlayout)
     implementation(libs.splashscreen)
+    implementation(libs.recyclerview)
+    implementation(libs.viewpager2)
 }

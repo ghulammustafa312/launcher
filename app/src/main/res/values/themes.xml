@@ -26,10 +26,19 @@
         <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.AeroLauncher.Rounded</item>
     </style>
 
-    <!-- SplashScreen API theme; postSplashScreenTheme hands off to the app theme -->
+    <!-- Home / launcher: draw over the system wallpaper -->
+    <style name="Theme.AeroLauncher.Home" parent="Theme.AeroLauncher">
+        <item name="android:windowShowWallpaper">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:colorBackground">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+
+    <!-- SplashScreen API theme; postSplashScreenTheme hands off to the home theme -->
     <style name="Theme.AeroLauncher.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splash_background</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash</item>
-        <item name="postSplashScreenTheme">@style/Theme.AeroLauncher</item>
+        <item name="postSplashScreenTheme">@style/Theme.AeroLauncher.Home</item>
     </style>
 </resources>

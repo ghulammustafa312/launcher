@@ -4,6 +4,8 @@ appcompat = "1.8.0"
 material = "1.14.0"
 constraintlayout = "2.2.1"
 splashscreen = "1.2.0"
+recyclerview = "1.4.0"
+viewpager2 = "1.1.0"
 compileSdk = "36"
 minSdk = "24"
 targetSdk = "36"
@@ -13,6 +15,8 @@ appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "a
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "splashscreen" }
+recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version.ref = "recyclerview" }
+viewpager2 = { group = "androidx.viewpager2", name = "viewpager2", version.ref = "viewpager2" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
