@@ -15,11 +15,13 @@ import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.yourstudio.aerolauncher.R;
+import com.yourstudio.aerolauncher.badges.BadgeStore;
 import com.yourstudio.aerolauncher.launcher.AppInfo;
 import com.yourstudio.aerolauncher.launcher.AppLauncher;
 import com.yourstudio.aerolauncher.launcher.IconCache;
 import com.yourstudio.aerolauncher.layout.HomeItem;
 import com.yourstudio.aerolauncher.layout.ItemLocation;
+import com.yourstudio.aerolauncher.privacy.BadgePreferences;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -71,6 +73,10 @@ public final class AppGridAdapter extends RecyclerView.Adapter<AppGridAdapter.Ho
         notifyDataSetChanged();
     }
 
+    public void refreshBadges() {
+        notifyDataSetChanged();
+    }
+
     @Override
     public long getItemId(int position) {
         HomeItem item = cells.get(position);
@@ -96,6 +102,7 @@ public final class AppGridAdapter extends RecyclerView.Adapter<AppGridAdapter.Ho
         if (item == null) {
             holder.iconContent.setVisibility(View.INVISIBLE);
             holder.removeBadge.setVisibility(View.GONE);
+            holder.notificationBadge.setVisibility(View.GONE);
             WiggleAnimation.stop(holder.iconContent);
             holder.itemView.setOnClickListener(null);
             holder.itemView.setOnLongClickListener(null);
@@ -107,14 +114,17 @@ public final class AppGridAdapter extends RecyclerView.Adapter<AppGridAdapter.Ho
         if (item.isFolder()) {
             holder.icon.setVisibility(View.GONE);
             holder.folderPreview.setVisibility(View.VISIBLE);
+            holder.notificationBadge.setVisibility(View.GONE);
         } else {
             holder.folderPreview.setVisibility(View.GONE);
             holder.icon.setVisibility(View.VISIBLE);
             AppInfo app = item.appKey != null ? appsByKey.get(item.appKey) : null;
             if (app != null) {
                 iconCache.loadInto(app, holder.icon);
+                bindNotificationBadge(holder, app);
             } else {
                 holder.icon.setImageResource(R.drawable.ic_app_placeholder);
+                holder.notificationBadge.setVisibility(View.GONE);
             }
         }
 
@@ -143,12 +153,25 @@ public final class AppGridAdapter extends RecyclerView.Adapter<AppGridAdapter.Ho
             }
             boolean alreadyEditing = callbacks.isEditMode();
             callbacks.onItemLongClick(item, location, v);
-            // First long-press enters edit mode + menu; later long-press starts a drag.
             if (alreadyEditing) {
                 startDrag(v, item, location);
             }
             return true;
         });
+    }
+
+    private void bindNotificationBadge(@NonNull Holder holder, @NonNull AppInfo app) {
+        if (!BadgePreferences.badgesActive(holder.itemView.getContext())) {
+            holder.notificationBadge.setVisibility(View.GONE);
+            return;
+        }
+        int count = BadgeStore.get().getCount(app.packageName);
+        if (count <= 0) {
+            holder.notificationBadge.setVisibility(View.GONE);
+            return;
+        }
+        holder.notificationBadge.setVisibility(View.VISIBLE);
+        holder.notificationBadge.setText(count > 99 ? "99+" : String.valueOf(count));
     }
 
     private void startDrag(
@@ -204,6 +227,7 @@ public final class AppGridAdapter extends RecyclerView.Adapter<AppGridAdapter.Ho
         final ImageView folderPreview;
         final TextView label;
         final ImageButton removeBadge;
+        final TextView notificationBadge;
 
         Holder(@NonNull View itemView) {
             super(itemView);
@@ -212,6 +236,7 @@ public final class AppGridAdapter extends RecyclerView.Adapter<AppGridAdapter.Ho
             folderPreview = itemView.findViewById(R.id.folder_preview);
             label = itemView.findViewById(R.id.app_label);
             removeBadge = itemView.findViewById(R.id.remove_badge);
+            notificationBadge = itemView.findViewById(R.id.notification_badge);
         }
     }
 }

@@ -16,6 +16,7 @@ public class LockOptInActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
+        ThemePreferences.applyAccentOverlay(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_lock_opt_in);
         EdgeToEdge.apply(this, findViewById(R.id.root));

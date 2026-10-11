@@ -69,6 +69,83 @@
                         android:layout_height="wrap_content"
                         android:text="@string/theme_auto" />
                 </RadioGroup>
+
+                <TextView
+                    style="@style/TextAppearance.AeroLauncher.Body"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:text="@string/settings_icon_style"
+                    android:textStyle="bold" />
+
+                <TextView
+                    style="@style/TextAppearance.AeroLauncher.Body"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/settings_icon_style_hint" />
+
+                <RadioGroup
+                    android:id="@+id/icon_style_group"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp">
+
+                    <RadioButton
+                        android:id="@+id/icon_rounded"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/icon_style_rounded" />
+
+                    <RadioButton
+                        android:id="@+id/icon_circle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/icon_style_circle" />
+
+                    <RadioButton
+                        android:id="@+id/icon_squircle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/icon_style_squircle" />
+                </RadioGroup>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Widget.AeroLauncher.Card.Glass"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="@dimen/card_padding">
+
+                <TextView
+                    style="@style/TextAppearance.AeroLauncher.Body"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings_wallpaper"
+                    android:textStyle="bold" />
+
+                <TextView
+                    style="@style/TextAppearance.AeroLauncher.Body"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/settings_wallpaper_hint" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/open_wallpaper"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="@string/wallpaper_open"
+                    app:cornerRadius="@dimen/corner_radius" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -285,12 +362,14 @@
                     android:orientation="horizontal">
 
                     <View
+                        android:id="@+id/swatch_midnight"
                         android:layout_width="@dimen/swatch_size"
                         android:layout_height="@dimen/swatch_size"
                         android:background="@drawable/swatch_midnight"
                         android:contentDescription="@string/color_midnight_indigo" />
 
                     <View
+                        android:id="@+id/swatch_violet"
                         android:layout_width="@dimen/swatch_size"
                         android:layout_height="@dimen/swatch_size"
                         android:layout_marginStart="12dp"
@@ -298,6 +377,7 @@
                         android:contentDescription="@string/color_violet" />
 
                     <View
+                        android:id="@+id/swatch_aqua"
                         android:layout_width="@dimen/swatch_size"
                         android:layout_height="@dimen/swatch_size"
                         android:layout_marginStart="12dp"
@@ -305,12 +385,125 @@
                         android:contentDescription="@string/color_aqua" />
 
                     <View
+                        android:id="@+id/swatch_orange"
                         android:layout_width="@dimen/swatch_size"
                         android:layout_height="@dimen/swatch_size"
                         android:layout_marginStart="12dp"
                         android:background="@drawable/swatch_orange"
                         android:contentDescription="@string/color_accent_orange" />
                 </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Widget.AeroLauncher.Card.Glass"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="@dimen/card_padding">
+
+                <TextView
+                    style="@style/TextAppearance.AeroLauncher.Body"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings_privacy"
+                    android:textStyle="bold" />
+
+                <TextView
+                    style="@style/TextAppearance.AeroLauncher.Body"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/settings_privacy_hint" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/open_hidden_apps"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="@string/hidden_apps_title"
+                    app:cornerRadius="@dimen/corner_radius" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Widget.AeroLauncher.Card.Glass"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="@dimen/card_padding">
+
+                <TextView
+                    style="@style/TextAppearance.AeroLauncher.Body"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings_focus"
+                    android:textStyle="bold" />
+
+                <TextView
+                    style="@style/TextAppearance.AeroLauncher.Body"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/settings_focus_hint" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/open_focus"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="@string/focus_open"
+                    app:cornerRadius="@dimen/corner_radius" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Widget.AeroLauncher.Card.Glass"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="24dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="@dimen/card_padding">
+
+                <TextView
+                    style="@style/TextAppearance.AeroLauncher.Body"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings_badges"
+                    android:textStyle="bold" />
+
+                <TextView
+                    style="@style/TextAppearance.AeroLauncher.Body"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/settings_badges_hint" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/open_badges"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="@string/badges_open"
+                    app:cornerRadius="@dimen/corner_radius" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
     </LinearLayout>

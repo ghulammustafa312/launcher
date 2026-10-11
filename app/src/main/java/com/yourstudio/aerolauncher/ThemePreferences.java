@@ -1,13 +1,15 @@
 package com.yourstudio.aerolauncher;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.StyleRes;
 import androidx.appcompat.app.AppCompatDelegate;
 
 /**
- * Stores the user's light / dark / auto preference.
- * Auto maps to MODE_NIGHT_FOLLOW_SYSTEM.
+ * Theme mode, accent color, and icon mask style.
  */
 public final class ThemePreferences {
 
@@ -15,8 +17,19 @@ public final class ThemePreferences {
     public static final String MODE_DARK = "dark";
     public static final String MODE_AUTO = "auto";
 
+    public static final String ACCENT_MIDNIGHT = "midnight";
+    public static final String ACCENT_VIOLET = "violet";
+    public static final String ACCENT_AQUA = "aqua";
+    public static final String ACCENT_ORANGE = "orange";
+
+    public static final String ICON_ROUNDED = "rounded";
+    public static final String ICON_CIRCLE = "circle";
+    public static final String ICON_SQUIRCLE = "squircle";
+
     private static final String PREFS_NAME = "aero_launcher_prefs";
     private static final String KEY_THEME_MODE = "theme_mode";
+    private static final String KEY_ACCENT = "accent_color";
+    private static final String KEY_ICON_STYLE = "icon_style";
 
     private ThemePreferences() {
     }
@@ -54,5 +67,43 @@ public final class ThemePreferences {
                 break;
         }
         AppCompatDelegate.setDefaultNightMode(nightMode);
+    }
+
+    @NonNull
+    public static String getAccent(@NonNull Context context) {
+        return prefs(context).getString(KEY_ACCENT, ACCENT_VIOLET);
+    }
+
+    public static void setAccent(@NonNull Context context, @NonNull String accent) {
+        prefs(context).edit().putString(KEY_ACCENT, accent).apply();
+    }
+
+    @StyleRes
+    public static int accentThemeRes(@NonNull Context context) {
+        switch (getAccent(context)) {
+            case ACCENT_MIDNIGHT:
+                return R.style.Theme_AeroLauncher_Accent_Midnight;
+            case ACCENT_AQUA:
+                return R.style.Theme_AeroLauncher_Accent_Aqua;
+            case ACCENT_ORANGE:
+                return R.style.Theme_AeroLauncher_Accent_Orange;
+            case ACCENT_VIOLET:
+            default:
+                return R.style.Theme_AeroLauncher_Accent_Violet;
+        }
+    }
+
+    /** Call before {@code setContentView}. */
+    public static void applyAccentOverlay(@NonNull Activity activity) {
+        activity.setTheme(accentThemeRes(activity));
+    }
+
+    @NonNull
+    public static String getIconStyle(@NonNull Context context) {
+        return prefs(context).getString(KEY_ICON_STYLE, ICON_ROUNDED);
+    }
+
+    public static void setIconStyle(@NonNull Context context, @NonNull String style) {
+        prefs(context).edit().putString(KEY_ICON_STYLE, style).apply();
     }
 }

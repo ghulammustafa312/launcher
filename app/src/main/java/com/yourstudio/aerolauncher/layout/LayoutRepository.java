@@ -531,6 +531,14 @@ public final class LayoutRepository {
         saveAsync(copy);
     }
 
+    public void unhideApp(@NonNull String appKey) {
+        HomeLayout copy = deepCopy(layout);
+        if (!copy.hiddenAppKeys.remove(appKey)) {
+            return;
+        }
+        saveAsync(copy);
+    }
+
     public void removeFromHome(@NonNull ItemLocation location) {
         HomeLayout copy = deepCopy(layout);
         setAt(copy, location, null);

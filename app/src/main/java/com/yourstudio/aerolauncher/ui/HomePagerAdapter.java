@@ -117,6 +117,10 @@ public final class HomePagerAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         notifyItemRangeChanged(0, pages.size());
     }
 
+    public void refreshBadges() {
+        notifyItemRangeChanged(0, pages.size());
+    }
+
     /** Workspace pages + one App Library page. */
     public int getPageCount() {
         return pages.size() + 1;

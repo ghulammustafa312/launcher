@@ -111,4 +111,59 @@
     <string name="quick_panel_sound">Sound</string>
     <string name="quick_panel_camera_permission">Camera permission is needed for the flashlight</string>
     <string name="quick_panel_brightness_permission">Allow modifying system settings to change brightness</string>
+
+    <string name="settings_icon_style">Icon style</string>
+    <string name="settings_icon_style_hint">Masks every home and library icon.</string>
+    <string name="icon_style_rounded">Rounded squares</string>
+    <string name="icon_style_circle">Circles</string>
+    <string name="icon_style_squircle">Squircles</string>
+
+    <string name="settings_wallpaper">Wallpaper</string>
+    <string name="settings_wallpaper_hint">Built-in originals, your photos, and optional blur.</string>
+    <string name="wallpaper_open">Choose wallpaper</string>
+    <string name="wallpaper_title">Wallpaper</string>
+    <string name="wallpaper_none">System wallpaper</string>
+    <string name="wallpaper_builtin">Aero originals</string>
+    <string name="wallpaper_dusk">Dusk</string>
+    <string name="wallpaper_aurora">Aurora</string>
+    <string name="wallpaper_mist">Mist</string>
+    <string name="wallpaper_ember">Ember</string>
+    <string name="wallpaper_photo">Choose photo</string>
+    <string name="wallpaper_blur">Blur</string>
+    <string name="wallpaper_blur_value">Blur: %1$d</string>
+
+    <string name="settings_privacy">Privacy</string>
+    <string name="settings_privacy_hint">Hide apps, review the hidden list, and lock apps with biometrics.</string>
+    <string name="hidden_apps_title">Hidden apps</string>
+    <string name="hidden_apps_empty">No hidden apps</string>
+    <string name="unhide_app">Unhide</string>
+    <string name="action_lock_app">Lock with biometrics</string>
+    <string name="action_unlock_app">Remove app lock</string>
+    <string name="app_locked">App lock enabled</string>
+    <string name="app_unlocked">App lock removed</string>
+    <string name="app_lock_prompt_title">Unlock app</string>
+    <string name="app_lock_prompt_subtitle">Authenticate to open %1$s</string>
+    <string name="app_lock_failed">Authentication failed</string>
+
+    <string name="settings_focus">Focus modes</string>
+    <string name="settings_focus_hint">Work, Study, and Sleep can hide selected apps from the home screen.</string>
+    <string name="focus_open">Manage Focus</string>
+    <string name="focus_title">Focus</string>
+    <string name="focus_off">Off</string>
+    <string name="focus_work">Work</string>
+    <string name="focus_study">Study</string>
+    <string name="focus_sleep">Sleep</string>
+    <string name="focus_pick_apps">Apps hidden in this mode</string>
+    <string name="focus_active">Focus: %1$s</string>
+
+    <string name="settings_badges">Notification badges</string>
+    <string name="settings_badges_hint">Optional dots on icons. Requires an in-app explanation and Notification access you control.</string>
+    <string name="badges_open">Notification badges</string>
+    <string name="badge_opt_in_title">Notification badges</string>
+    <string name="badge_opt_in_body">Aero Launcher can show a small count on app icons when apps have unread notifications.\n\nTo do that, Android requires a NotificationListenerService. Aero Launcher will only read each notification’s package name to count badges.\n\nIt will never store or send notification titles, messages, or other content.</string>
+    <string name="badge_opt_in_privacy">You can turn this off anytime. Disabling clears badge counts from memory.</string>
+    <string name="badge_opt_in_enable">Continue to Notification access</string>
+    <string name="badge_opt_in_disable">Turn badges off</string>
+    <string name="badge_listener_description">Counts notifications per app for home-screen badges. Does not read notification content.</string>
+    <string name="badge_listener_label">Aero Launcher badges</string>
 </resources>

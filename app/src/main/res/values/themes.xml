@@ -41,4 +41,24 @@
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash</item>
         <item name="postSplashScreenTheme">@style/Theme.AeroLauncher.Home</item>
     </style>
+
+    <style name="Theme.AeroLauncher.Accent.Violet" parent="Theme.AeroLauncher">
+        <item name="colorPrimary">@color/violet</item>
+        <item name="colorPrimaryContainer">@color/violet</item>
+    </style>
+
+    <style name="Theme.AeroLauncher.Accent.Midnight" parent="Theme.AeroLauncher">
+        <item name="colorPrimary">@color/midnight_indigo</item>
+        <item name="colorPrimaryContainer">@color/midnight_indigo</item>
+    </style>
+
+    <style name="Theme.AeroLauncher.Accent.Aqua" parent="Theme.AeroLauncher">
+        <item name="colorPrimary">@color/aqua</item>
+        <item name="colorPrimaryContainer">@color/aqua</item>
+    </style>
+
+    <style name="Theme.AeroLauncher.Accent.Orange" parent="Theme.AeroLauncher">
+        <item name="colorPrimary">@color/accent_orange</item>
+        <item name="colorPrimaryContainer">@color/accent_orange</item>
+    </style>
 </resources>

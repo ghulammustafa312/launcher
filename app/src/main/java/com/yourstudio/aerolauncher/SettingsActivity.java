@@ -10,6 +10,7 @@ import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -22,7 +23,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * Settings: theme, grid size, layout backup/restore, palette.
+ * Settings: theme, accent, icons, wallpaper, privacy, focus, badges, grid, backup.
  */
 public class SettingsActivity extends AppCompatActivity {
 
@@ -43,12 +44,46 @@ public class SettingsActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
+        ThemePreferences.applyAccentOverlay(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
 
         EdgeToEdge.apply(this, findViewById(R.id.root));
         layoutRepository = ((AeroLauncherApp) getApplication()).getLayoutRepository();
 
+        bindThemeControls();
+        bindIconStyleControls();
+        bindAccentSwatches();
+
+        columns = HomePreferences.getColumns(this);
+        rows = HomePreferences.getRows(this);
+        columnsLabel = findViewById(R.id.grid_columns_label);
+        rowsLabel = findViewById(R.id.grid_rows_label);
+        refreshGridLabels();
+
+        findViewById(R.id.columns_minus).setOnClickListener(v -> adjustGrid(-1, 0));
+        findViewById(R.id.columns_plus).setOnClickListener(v -> adjustGrid(1, 0));
+        findViewById(R.id.rows_minus).setOnClickListener(v -> adjustGrid(0, -1));
+        findViewById(R.id.rows_plus).setOnClickListener(v -> adjustGrid(0, 1));
+
+        findViewById(R.id.setup_lock).setOnClickListener(v ->
+                startActivity(new Intent(this, LockOptInActivity.class)));
+        findViewById(R.id.open_wallpaper).setOnClickListener(v ->
+                startActivity(new Intent(this, WallpaperActivity.class)));
+        findViewById(R.id.open_hidden_apps).setOnClickListener(v ->
+                startActivity(new Intent(this, HiddenAppsActivity.class)));
+        findViewById(R.id.open_focus).setOnClickListener(v ->
+                startActivity(new Intent(this, FocusModeActivity.class)));
+        findViewById(R.id.open_badges).setOnClickListener(v ->
+                startActivity(new Intent(this, BadgeOptInActivity.class)));
+
+        findViewById(R.id.backup_layout).setOnClickListener(v ->
+                createBackup.launch(LayoutBackup.DEFAULT_FILE_NAME));
+        findViewById(R.id.restore_layout).setOnClickListener(v ->
+                openBackup.launch(new String[]{LayoutBackup.MIME_TYPE, "application/*", "text/*"}));
+    }
+
+    private void bindThemeControls() {
         RadioGroup themeGroup = findViewById(R.id.theme_group);
         RadioButton light = findViewById(R.id.theme_light);
         RadioButton dark = findViewById(R.id.theme_dark);
@@ -76,25 +111,51 @@ public class SettingsActivity extends AppCompatActivity {
                 ThemePreferences.setThemeMode(this, ThemePreferences.MODE_AUTO);
             }
         });
+    }
 
-        columns = HomePreferences.getColumns(this);
-        rows = HomePreferences.getRows(this);
-        columnsLabel = findViewById(R.id.grid_columns_label);
-        rowsLabel = findViewById(R.id.grid_rows_label);
-        refreshGridLabels();
+    private void bindIconStyleControls() {
+        RadioGroup group = findViewById(R.id.icon_style_group);
+        RadioButton rounded = findViewById(R.id.icon_rounded);
+        RadioButton circle = findViewById(R.id.icon_circle);
+        RadioButton squircle = findViewById(R.id.icon_squircle);
+        switch (ThemePreferences.getIconStyle(this)) {
+            case ThemePreferences.ICON_CIRCLE:
+                circle.setChecked(true);
+                break;
+            case ThemePreferences.ICON_SQUIRCLE:
+                squircle.setChecked(true);
+                break;
+            case ThemePreferences.ICON_ROUNDED:
+            default:
+                rounded.setChecked(true);
+                break;
+        }
+        group.setOnCheckedChangeListener((g, checkedId) -> {
+            if (checkedId == R.id.icon_circle) {
+                ThemePreferences.setIconStyle(this, ThemePreferences.ICON_CIRCLE);
+            } else if (checkedId == R.id.icon_squircle) {
+                ThemePreferences.setIconStyle(this, ThemePreferences.ICON_SQUIRCLE);
+            } else {
+                ThemePreferences.setIconStyle(this, ThemePreferences.ICON_ROUNDED);
+            }
+            ((AeroLauncherApp) getApplication()).getAppRepository().getIconCache().invalidateAllShapes();
+        });
+    }
 
-        findViewById(R.id.columns_minus).setOnClickListener(v -> adjustGrid(-1, 0));
-        findViewById(R.id.columns_plus).setOnClickListener(v -> adjustGrid(1, 0));
-        findViewById(R.id.rows_minus).setOnClickListener(v -> adjustGrid(0, -1));
-        findViewById(R.id.rows_plus).setOnClickListener(v -> adjustGrid(0, 1));
+    private void bindAccentSwatches() {
+        findViewById(R.id.swatch_midnight).setOnClickListener(v ->
+                applyAccent(ThemePreferences.ACCENT_MIDNIGHT));
+        findViewById(R.id.swatch_violet).setOnClickListener(v ->
+                applyAccent(ThemePreferences.ACCENT_VIOLET));
+        findViewById(R.id.swatch_aqua).setOnClickListener(v ->
+                applyAccent(ThemePreferences.ACCENT_AQUA));
+        findViewById(R.id.swatch_orange).setOnClickListener(v ->
+                applyAccent(ThemePreferences.ACCENT_ORANGE));
+    }
 
-        findViewById(R.id.setup_lock).setOnClickListener(v ->
-                startActivity(new Intent(this, LockOptInActivity.class)));
-
-        findViewById(R.id.backup_layout).setOnClickListener(v ->
-                createBackup.launch(LayoutBackup.DEFAULT_FILE_NAME));
-        findViewById(R.id.restore_layout).setOnClickListener(v ->
-                openBackup.launch(new String[]{LayoutBackup.MIME_TYPE, "application/*", "text/*"}));
+    private void applyAccent(@NonNull String accent) {
+        ThemePreferences.setAccent(this, accent);
+        recreate();
     }
 
     @Override

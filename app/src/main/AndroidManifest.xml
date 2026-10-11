@@ -4,12 +4,17 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.FLASHLIGHT" />
     <uses-permission android:name="android.permission.WRITE_SETTINGS" />
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
 
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
     <uses-feature
         android:name="android.hardware.camera.flash"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.fingerprint"
         android:required="false" />
 
     <!-- Discover launchable apps and widgets without QUERY_ALL_PACKAGES -->
@@ -67,6 +72,34 @@
             android:theme="@style/Theme.AeroLauncher" />
 
         <activity
+            android:name=".WallpaperActivity"
+            android:exported="false"
+            android:label="@string/wallpaper_title"
+            android:parentActivityName=".SettingsActivity"
+            android:theme="@style/Theme.AeroLauncher" />
+
+        <activity
+            android:name=".HiddenAppsActivity"
+            android:exported="false"
+            android:label="@string/hidden_apps_title"
+            android:parentActivityName=".SettingsActivity"
+            android:theme="@style/Theme.AeroLauncher" />
+
+        <activity
+            android:name=".FocusModeActivity"
+            android:exported="false"
+            android:label="@string/focus_title"
+            android:parentActivityName=".SettingsActivity"
+            android:theme="@style/Theme.AeroLauncher" />
+
+        <activity
+            android:name=".BadgeOptInActivity"
+            android:exported="false"
+            android:label="@string/badge_opt_in_title"
+            android:parentActivityName=".SettingsActivity"
+            android:theme="@style/Theme.AeroLauncher" />
+
+        <activity
             android:name=".widgets.builtin.NotesWidgetConfigureActivity"
             android:exported="false"
             android:label="@string/widget_notes_configure_title"
@@ -84,6 +117,23 @@
             <meta-data
                 android:name="android.accessibilityservice"
                 android:resource="@xml/lock_accessibility_service" />
+        </service>
+
+        <!-- Opt-in only: package counts for badges. Never stores notification content. -->
+        <service
+            android:name=".badges.AeroNotificationListener"
+            android:exported="true"
+            android:label="@string/badge_listener_label"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.notification.default_filter_types"
+                android:value="conversations|alerting" />
+            <meta-data
+                android:name="android.service.notification.disabled_filter_types"
+                android:value="ongoing|silent" />
         </service>
 
         <receiver

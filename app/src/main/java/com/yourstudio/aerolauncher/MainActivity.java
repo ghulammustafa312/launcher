@@ -38,6 +38,8 @@ import androidx.viewpager2.widget.ViewPager2;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
+import com.yourstudio.aerolauncher.badges.BadgeStore;
+import com.yourstudio.aerolauncher.focus.FocusPreferences;
 import com.yourstudio.aerolauncher.launcher.AppActions;
 import com.yourstudio.aerolauncher.launcher.AppInfo;
 import com.yourstudio.aerolauncher.launcher.AppRepository;
@@ -46,6 +48,8 @@ import com.yourstudio.aerolauncher.layout.HomeItem;
 import com.yourstudio.aerolauncher.layout.HomeLayout;
 import com.yourstudio.aerolauncher.layout.ItemLocation;
 import com.yourstudio.aerolauncher.layout.LayoutRepository;
+import com.yourstudio.aerolauncher.privacy.AppLockHelper;
+import com.yourstudio.aerolauncher.privacy.AppLockPreferences;
 import com.yourstudio.aerolauncher.search.SearchController;
 import com.yourstudio.aerolauncher.ui.AppGridAdapter;
 import com.yourstudio.aerolauncher.ui.EdgeToEdge;
@@ -57,13 +61,16 @@ import com.yourstudio.aerolauncher.ui.PageDotsController;
 import com.yourstudio.aerolauncher.ui.QuickPanelController;
 import com.yourstudio.aerolauncher.ui.SearchResultsAdapter;
 import com.yourstudio.aerolauncher.ui.WiggleAnimation;
+import com.yourstudio.aerolauncher.wallpaper.WallpaperController;
 import com.yourstudio.aerolauncher.widgets.WidgetHostManager;
 import com.yourstudio.aerolauncher.widgets.WidgetInstaller;
 import com.yourstudio.aerolauncher.widgets.WidgetPlacement;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Home launcher: workspace, widgets, App Library, search, quick panel, and gestures.
@@ -73,7 +80,8 @@ public class MainActivity extends AppCompatActivity
         LayoutRepository.Listener,
         AppGridAdapter.Callbacks,
         HomeGestureRouter.Callbacks,
-        HomePagerAdapter.WidgetCallbacks {
+        HomePagerAdapter.WidgetCallbacks,
+        BadgeStore.Listener {
 
     private AppRepository appRepository;
     private LayoutRepository layoutRepository;
@@ -90,6 +98,7 @@ public class MainActivity extends AppCompatActivity
     private SearchResultsAdapter searchAdapter;
     private HomeGestureRouter gestureRouter;
     private QuickPanelController quickPanel;
+    private WallpaperController wallpaperController;
     private final Map<String, AppInfo> appsByKey = new HashMap<>();
     private boolean keepSplash = true;
     private boolean editMode;
@@ -130,6 +139,7 @@ public class MainActivity extends AppCompatActivity
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         SplashScreen splashScreen = SplashScreen.installSplashScreen(this);
         splashScreen.setKeepOnScreenCondition(() -> keepSplash);
+        ThemePreferences.applyAccentOverlay(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -142,6 +152,7 @@ public class MainActivity extends AppCompatActivity
         widgetHostManager.startListening();
         widgetInstaller = new WidgetInstaller(
                 widgetHostManager, bindWidgetLauncher, configureWidgetLauncher);
+        wallpaperController = new WallpaperController(this, findViewById(R.id.home_wallpaper));
 
         homePager = findViewById(R.id.home_pager);
         dockRow = findViewById(R.id.dock_row);
@@ -255,10 +266,12 @@ public class MainActivity extends AppCompatActivity
     protected void onStart() {
         super.onStart();
         widgetHostManager.startListening();
+        BadgeStore.get().addListener(this);
     }
 
     @Override
     protected void onStop() {
+        BadgeStore.get().removeListener(this);
         widgetHostManager.stopListening();
         super.onStop();
     }
@@ -267,12 +280,17 @@ public class MainActivity extends AppCompatActivity
     protected void onResume() {
         super.onResume();
         updateDefaultLauncherBanner();
+        if (wallpaperController != null) {
+            wallpaperController.refresh();
+        }
         HomeLayout current = layoutRepository.getLayout();
         int capacity = HomePreferences.pageCapacity(this);
         if (!appsByKey.isEmpty()
                 && !current.pages.isEmpty()
                 && current.pages.get(0).size() != capacity) {
             layoutRepository.loadAndSync(appRepository.getApps());
+        } else {
+            bindLayout(current);
         }
         refreshLibraryData();
     }
@@ -284,7 +302,18 @@ public class MainActivity extends AppCompatActivity
         if (widgetInstaller != null) {
             widgetInstaller.cancelPending();
         }
+        if (wallpaperController != null) {
+            wallpaperController.shutdown();
+        }
         super.onDestroy();
+    }
+
+    @Override
+    public void onBadgesChanged() {
+        if (pagerAdapter != null) {
+            pagerAdapter.refreshBadges();
+        }
+        bindDock(layoutRepository.getLayout());
     }
 
     @Override
@@ -316,7 +345,8 @@ public class MainActivity extends AppCompatActivity
     private void bindLayout(@NonNull HomeLayout layout) {
         int columns = HomePreferences.getColumns(this);
         int previousPage = homePager.getCurrentItem();
-        pagerAdapter.setPages(layout.pages, layout.pageWidgets, columns);
+        List<List<HomeItem>> visiblePages = applyFocusFilter(layout.pages);
+        pagerAdapter.setPages(visiblePages, layout.pageWidgets, columns);
         int pageCount = pagerAdapter.getPageCount();
         pageDots.setPageCount(pageCount);
         if (previousPage >= pageCount) {
@@ -325,6 +355,46 @@ public class MainActivity extends AppCompatActivity
         pageDots.setSelected(homePager.getCurrentItem());
         bindDock(layout);
         refreshLibraryData();
+    }
+
+    @NonNull
+    private List<List<HomeItem>> applyFocusFilter(@NonNull List<List<HomeItem>> pages) {
+        Set<String> hidden = FocusPreferences.activeHiddenKeys(this);
+        if (hidden.isEmpty()) {
+            return pages;
+        }
+        List<List<HomeItem>> filtered = new ArrayList<>();
+        for (List<HomeItem> page : pages) {
+            List<HomeItem> copy = new ArrayList<>(page.size());
+            for (HomeItem item : page) {
+                if (item != null && item.isApp() && item.appKey != null && hidden.contains(item.appKey)) {
+                    copy.add(null);
+                } else if (item != null && item.isFolder()) {
+                    copy.add(filterFolderForFocus(item, hidden));
+                } else {
+                    copy.add(item);
+                }
+            }
+            filtered.add(copy);
+        }
+        return filtered;
+    }
+
+    @Nullable
+    private HomeItem filterFolderForFocus(@NonNull HomeItem folder, @NonNull Set<String> hidden) {
+        List<String> keys = new ArrayList<>();
+        for (String key : folder.folderAppKeys) {
+            if (!hidden.contains(key)) {
+                keys.add(key);
+            }
+        }
+        if (keys.isEmpty()) {
+            return null;
+        }
+        if (keys.size() == folder.folderAppKeys.size()) {
+            return folder;
+        }
+        return HomeItem.folder(folder.id, folder.title, keys);
     }
 
     private void ensureDockSlots() {
@@ -346,6 +416,10 @@ public class MainActivity extends AppCompatActivity
             ImageButton remove = slot.findViewById(R.id.dock_remove);
             ItemLocation location = ItemLocation.dock(i);
             HomeItem item = layout.getDock(i);
+            Set<String> focusHidden = FocusPreferences.activeHiddenKeys(this);
+            if (item != null && item.isApp() && item.appKey != null && focusHidden.contains(item.appKey)) {
+                item = null;
+            }
 
             slot.setOnDragListener(new HomeDragListener(location, this));
             remove.setVisibility(editMode && item != null ? View.VISIBLE : View.GONE);
@@ -680,6 +754,32 @@ public class MainActivity extends AppCompatActivity
                     layoutRepository);
             return;
         }
+        launchHomeItem(item, anchor);
+    }
+
+    private void launchHomeItem(@NonNull HomeItem item, @NonNull View anchor) {
+        if (!item.isApp() || item.appKey == null) {
+            return;
+        }
+        AppInfo app = appsByKey.get(item.appKey);
+        if (app == null) {
+            return;
+        }
+        if (AppLockPreferences.isLocked(this, item.appKey)) {
+            AppLockHelper.authenticate(this, app.label, new AppLockHelper.Callback() {
+                @Override
+                public void onAuthenticated() {
+                    AppGridAdapter.launchApp(anchor, item, appsByKey);
+                }
+
+                @Override
+                public void onFailed() {
+                    Toast.makeText(MainActivity.this, R.string.app_lock_failed, Toast.LENGTH_SHORT)
+                            .show();
+                }
+            });
+            return;
+        }
         AppGridAdapter.launchApp(anchor, item, appsByKey);
     }
 
@@ -716,7 +816,9 @@ public class MainActivity extends AppCompatActivity
             menu.getMenu().add(0, 3, 0, R.string.action_app_info);
             menu.getMenu().add(0, 4, 1, R.string.action_uninstall);
             menu.getMenu().add(0, 5, 2, R.string.action_hide);
-            menu.getMenu().add(0, 2, 3, R.string.remove_from_home);
+            boolean locked = item.appKey != null && AppLockPreferences.isLocked(this, item.appKey);
+            menu.getMenu().add(0, 6, 3, locked ? R.string.action_unlock_app : R.string.action_lock_app);
+            menu.getMenu().add(0, 2, 4, R.string.remove_from_home);
         }
         menu.setOnMenuItemClickListener(menuItem -> {
             int id = menuItem.getItemId();
@@ -750,6 +852,15 @@ public class MainActivity extends AppCompatActivity
             if (id == 5 && item.appKey != null) {
                 layoutRepository.hideApp(item.appKey);
                 Toast.makeText(this, R.string.app_hidden, Toast.LENGTH_SHORT).show();
+                return true;
+            }
+            if (id == 6 && item.appKey != null) {
+                boolean locked = AppLockPreferences.isLocked(this, item.appKey);
+                AppLockPreferences.setLocked(this, item.appKey, !locked);
+                Toast.makeText(
+                        this,
+                        locked ? R.string.app_unlocked : R.string.app_locked,
+                        Toast.LENGTH_SHORT).show();
                 return true;
             }
             return false;
