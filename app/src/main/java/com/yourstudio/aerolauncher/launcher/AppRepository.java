@@ -26,10 +26,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Loads launchable apps on a background thread, caches icons, and listens for
- * install / remove / change events via {@link LauncherApps.Callback}.
+ * Loads launchable apps (including work-profile users) on a background thread,
+ * caches icons, and listens for install / remove / change events via {@link LauncherApps.Callback}.
  */
 public final class AppRepository {
+
+    private static final long RELOAD_DEBOUNCE_MS = 350L;
 
     public interface Listener {
         @MainThread
@@ -44,6 +46,7 @@ public final class AppRepository {
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final CopyOnWriteArrayList<Listener> listeners = new CopyOnWriteArrayList<>();
     private final AtomicBoolean started = new AtomicBoolean(false);
+    private final Runnable debouncedReload = this::reloadNow;
 
     @NonNull
     private volatile List<AppInfo> apps = Collections.emptyList();
@@ -94,10 +97,22 @@ public final class AppRepository {
             return;
         }
         registerPackageCallback();
-        reload();
+        reloadNow();
     }
 
+    /** Immediate reload (startup / explicit refresh). */
     public void reload() {
+        reloadNow();
+    }
+
+    /** Coalesce rapid package events (updates often fire multiple callbacks). */
+    private void scheduleReload() {
+        mainHandler.removeCallbacks(debouncedReload);
+        mainHandler.postDelayed(debouncedReload, RELOAD_DEBOUNCE_MS);
+    }
+
+    private void reloadNow() {
+        mainHandler.removeCallbacks(debouncedReload);
         executor.execute(() -> {
             List<AppInfo> loaded = loadInstalledApps();
             Collections.sort(loaded, Comparator.comparing(
@@ -120,28 +135,28 @@ public final class AppRepository {
             @Override
             public void onPackageRemoved(String packageName, UserHandle user) {
                 iconCache.invalidatePackage(packageName);
-                reload();
+                scheduleReload();
             }
 
             @Override
             public void onPackageAdded(String packageName, UserHandle user) {
-                reload();
+                scheduleReload();
             }
 
             @Override
             public void onPackageChanged(String packageName, UserHandle user) {
                 iconCache.invalidatePackage(packageName);
-                reload();
+                scheduleReload();
             }
 
             @Override
             public void onPackagesAvailable(String[] packageNames, UserHandle user, boolean replacing) {
-                reload();
+                scheduleReload();
             }
 
             @Override
             public void onPackagesUnavailable(String[] packageNames, UserHandle user, boolean replacing) {
-                reload();
+                scheduleReload();
             }
         };
         launcherApps.registerCallback(callback, mainHandler);
@@ -153,10 +168,10 @@ public final class AppRepository {
             List<AppInfo> result = new ArrayList<>();
             List<UserHandle> profiles = userManager.getUserProfiles();
             for (UserHandle user : profiles) {
+                boolean work = isWorkProfile(user);
                 List<LauncherActivityInfo> activities = launcherApps.getActivityList(null, user);
                 PackageManager pm = appContext.getPackageManager();
                 for (LauncherActivityInfo info : activities) {
-                    // Skip this launcher itself on the home grid.
                     String packageName = info.getComponentName().getPackageName();
                     if (appContext.getPackageName().equals(packageName)) {
                         continue;
@@ -169,7 +184,8 @@ public final class AppRepository {
                             info.getUser(),
                             info,
                             AppCategory.from(packageName, label, categoryCode),
-                            AppInfo.readInstallTime(pm, packageName)));
+                            AppInfo.readInstallTime(pm, packageName),
+                            work));
                 }
             }
             if (!result.isEmpty()) {
@@ -179,9 +195,11 @@ public final class AppRepository {
         return loadViaPackageManager();
     }
 
-    /**
-     * Fallback when LauncherApps returns nothing (still uses MAIN/LAUNCHER queries).
-     */
+    private static boolean isWorkProfile(@NonNull UserHandle user) {
+        // Secondary profiles returned by UserManager#getUserProfiles are typically work.
+        return !Process.myUserHandle().equals(user);
+    }
+
     @NonNull
     private List<AppInfo> loadViaPackageManager() {
         PackageManager pm = appContext.getPackageManager();
@@ -209,12 +227,18 @@ public final class AppRepository {
                     user,
                     null,
                     AppCategory.from(packageName, label, categoryCode),
-                    AppInfo.readInstallTime(pm, packageName)));
+                    AppInfo.readInstallTime(pm, packageName),
+                    false));
         }
         return result;
     }
 
+    public void onTrimMemory(int level) {
+        iconCache.onTrimMemory(level);
+    }
+
     public void shutdown() {
+        mainHandler.removeCallbacks(debouncedReload);
         if (launcherApps != null && callback != null) {
             launcherApps.unregisterCallback(callback);
             callback = null;

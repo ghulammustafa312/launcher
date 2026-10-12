@@ -1,5 +1,6 @@
 package com.yourstudio.aerolauncher.launcher;
 
+import android.content.ComponentCallbacks2;
 import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
@@ -20,7 +21,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * Background icon decode with adaptive-style masks and an in-memory LRU cache.
+ * Lazy background icon decode with adaptive-style masks and an in-memory LRU cache.
  */
 public final class IconCache {
 
@@ -38,8 +39,9 @@ public final class IconCache {
                 TypedValue.COMPLEX_UNIT_DIP,
                 52,
                 appContext.getResources().getDisplayMetrics()));
-        int maxKb = (int) (Runtime.getRuntime().maxMemory() / 1024 / 8);
-        cache = new LruCache<String, Drawable>(Math.max(1024, maxKb)) {
+        // Cap cache harder on low-RAM devices (~1/12 of heap).
+        int maxKb = (int) (Runtime.getRuntime().maxMemory() / 1024 / 12);
+        cache = new LruCache<String, Drawable>(Math.max(512, maxKb)) {
             @Override
             protected int sizeOf(@NonNull String key, @NonNull Drawable value) {
                 return 48;
@@ -60,6 +62,19 @@ public final class IconCache {
         cache.evictAll();
     }
 
+    /** Responds to system memory pressure without blocking the UI. */
+    public void onTrimMemory(int level) {
+        if (level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL
+                || level >= ComponentCallbacks2.TRIM_MEMORY_COMPLETE) {
+            cache.evictAll();
+        } else if (level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW
+                || level >= ComponentCallbacks2.TRIM_MEMORY_MODERATE) {
+            cache.trimToSize(Math.max(64, cache.size() / 2));
+        } else if (level >= ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN) {
+            cache.trimToSize(Math.max(128, cache.size() * 3 / 4));
+        }
+    }
+
     public void invalidatePackage(@NonNull String packageName) {
         for (String key : cache.snapshot().keySet()) {
             if (key.contains(packageName)) {
@@ -68,9 +83,17 @@ public final class IconCache {
         }
     }
 
-    /** Clears shaped icons when the user changes icon style. */
     public void invalidateAllShapes() {
         cache.evictAll();
+    }
+
+    /**
+     * Cancels a pending bind for a recycled view by clearing its expected cache key.
+     */
+    @MainThread
+    public void clearTarget(@NonNull ImageView target) {
+        target.setTag(R.id.tag_icon_key, null);
+        target.setImageDrawable(null);
     }
 
     @MainThread
@@ -105,5 +128,6 @@ public final class IconCache {
 
     public void shutdown() {
         executor.shutdownNow();
+        cache.evictAll();
     }
 }

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Aero Launcher</string>
+    <string name="work_profile_suffix"> (Work)</string>
     <string name="main_headline">Aero Launcher</string>
     <string name="main_subtitle">Original Android launcher shell. Theme, splash, and settings come first.</string>
     <string name="open_settings">Open settings</string>
@@ -33,6 +34,10 @@
     <string name="set_default_launcher">Set as default</string>
     <string name="set_default_launcher_hint">Set Aero Launcher as your Home app to use the dock and pages.</string>
     <string name="edit_done">Done</string>
+    <string name="action_arrange">Arrange icons</string>
+    <string name="app_actions_title">App actions</string>
+    <string name="folder_actions_title">Folder actions</string>
+    <string name="widget_actions_title">Widget actions</string>
     <string name="remove_from_home">Remove</string>
     <string name="action_app_info">App info</string>
     <string name="action_uninstall">Uninstall</string>

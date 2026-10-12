@@ -33,6 +33,25 @@
         <item name="android:colorBackground">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowLightNavigationBar">false</item>
+        <!-- Keep menu surfaces opaque even though the window is transparent -->
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorSurfaceContainer">@color/surface</item>
+        <item name="colorSurfaceContainerHigh">@color/surface</item>
+    </style>
+
+    <!-- Solid theme for action sheets shown over Home -->
+    <style name="Theme.AeroLauncher.Menus" parent="Theme.Material3.DayNight.Dialog.Alert">
+        <item name="colorPrimary">@color/violet</item>
+        <item name="colorOnPrimary">@color/on_primary</item>
+        <item name="android:colorBackground">@color/surface</item>
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/on_surface</item>
+        <item name="colorOnBackground">@color/on_background</item>
+        <item name="android:windowBackground">@color/surface</item>
+        <item name="android:textColorPrimary">@color/on_surface</item>
+        <item name="android:textColorSecondary">@color/on_surface</item>
+        <item name="fontFamily">@font/inter</item>
+        <item name="android:fontFamily">@font/inter</item>
     </style>
 
     <!-- SplashScreen API theme; postSplashScreenTheme hands off to the home theme -->
@@ -58,6 +77,27 @@
     </style>
 
     <style name="Theme.AeroLauncher.Accent.Orange" parent="Theme.AeroLauncher">
+        <item name="colorPrimary">@color/accent_orange</item>
+        <item name="colorPrimaryContainer">@color/accent_orange</item>
+    </style>
+
+    <!-- Home + accent (keeps wallpaper window; use only on MainActivity) -->
+    <style name="Theme.AeroLauncher.Home.Accent.Violet" parent="Theme.AeroLauncher.Home">
+        <item name="colorPrimary">@color/violet</item>
+        <item name="colorPrimaryContainer">@color/violet</item>
+    </style>
+
+    <style name="Theme.AeroLauncher.Home.Accent.Midnight" parent="Theme.AeroLauncher.Home">
+        <item name="colorPrimary">@color/midnight_indigo</item>
+        <item name="colorPrimaryContainer">@color/midnight_indigo</item>
+    </style>
+
+    <style name="Theme.AeroLauncher.Home.Accent.Aqua" parent="Theme.AeroLauncher.Home">
+        <item name="colorPrimary">@color/aqua</item>
+        <item name="colorPrimaryContainer">@color/aqua</item>
+    </style>
+
+    <style name="Theme.AeroLauncher.Home.Accent.Orange" parent="Theme.AeroLauncher.Home">
         <item name="colorPrimary">@color/accent_orange</item>
         <item name="colorPrimaryContainer">@color/accent_orange</item>
     </style>

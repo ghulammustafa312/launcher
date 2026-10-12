@@ -14,6 +14,7 @@ import androidx.annotation.Nullable;
 
 /**
  * Launchable app entry resolved from LauncherApps / PackageManager.
+ * Keys include the user handle so personal and work profile apps stay distinct.
  */
 public final class AppInfo {
 
@@ -30,6 +31,8 @@ public final class AppInfo {
     @NonNull
     public final AppCategory category;
     public final long firstInstallTimeMs;
+    /** True when this entry belongs to a non-primary user (typically work profile). */
+    public final boolean workProfile;
 
     @Nullable
     private final LauncherActivityInfo launcherActivityInfo;
@@ -40,7 +43,8 @@ public final class AppInfo {
             @NonNull UserHandle userHandle,
             @Nullable LauncherActivityInfo launcherActivityInfo,
             @NonNull AppCategory category,
-            long firstInstallTimeMs) {
+            long firstInstallTimeMs,
+            boolean workProfile) {
         this.label = label;
         this.componentName = componentName;
         this.packageName = componentName.getPackageName();
@@ -48,6 +52,7 @@ public final class AppInfo {
         this.launcherActivityInfo = launcherActivityInfo;
         this.category = category;
         this.firstInstallTimeMs = firstInstallTimeMs;
+        this.workProfile = workProfile;
         this.key = componentName.flattenToShortString() + "#" + userHandle.hashCode();
     }
 

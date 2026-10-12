@@ -61,12 +61,16 @@ public final class HomePagerAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     private WidgetCallbacks widgetCallbacks;
     @Nullable
     private WidgetHostManager widgetHostManager;
+    /** Shared across home grids for smoother 60fps page swipes on low-end devices. */
+    private final RecyclerView.RecycledViewPool iconViewPool = new RecyclerView.RecycledViewPool();
 
     public HomePagerAdapter(
             @NonNull IconCache iconCache,
             @NonNull Map<String, AppInfo> appsByKey) {
         this.iconCache = iconCache;
         this.appsByKey = appsByKey;
+        // Enough pooled icon cells for a couple of pages without thrashing.
+        iconViewPool.setMaxRecycledViews(0, 48);
     }
 
     public void setCallbacks(@Nullable AppGridAdapter.Callbacks callbacks) {
@@ -148,7 +152,7 @@ public final class HomePagerAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             return new LibraryHolder(view, iconCache);
         }
         View view = inflater.inflate(R.layout.page_home_grid, parent, false);
-        return new PageHolder(view, iconCache, appsByKey, columns);
+        return new PageHolder(view, iconCache, appsByKey, columns, iconViewPool);
     }
 
     @Override
@@ -185,13 +189,17 @@ public final class HomePagerAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 @NonNull View itemView,
                 @NonNull IconCache iconCache,
                 @NonNull Map<String, AppInfo> appsByKey,
-                int columns) {
+                int columns,
+                @NonNull RecyclerView.RecycledViewPool iconViewPool) {
             super(itemView);
             widgetZone = itemView.findViewById(R.id.widget_zone);
             addWidgetButton = itemView.findViewById(R.id.add_widget_button);
             grid = itemView.findViewById(R.id.page_grid);
             adapter = new AppGridAdapter(iconCache, appsByKey);
             grid.setLayoutManager(new GridLayoutManager(itemView.getContext(), columns));
+            grid.setRecycledViewPool(iconViewPool);
+            grid.setItemViewCacheSize(Math.max(12, columns * 3));
+            grid.setHasFixedSize(true);
             grid.setAdapter(adapter);
             grid.setOverScrollMode(View.OVER_SCROLL_NEVER);
             grid.setNestedScrollingEnabled(false);
@@ -258,6 +266,8 @@ public final class HomePagerAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             scroller = itemView.findViewById(R.id.fast_scroller);
             adapter = new AppLibraryAdapter(iconCache);
             list.setLayoutManager(new LinearLayoutManager(itemView.getContext()));
+            list.setItemViewCacheSize(20);
+            list.setHasFixedSize(true);
             list.setAdapter(adapter);
             scroller.setListener(letter ->
                     FastScrollerView.scrollToLetter(list, letter, adapter));

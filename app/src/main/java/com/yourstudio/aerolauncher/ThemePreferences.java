@@ -93,9 +93,29 @@ public final class ThemePreferences {
         }
     }
 
-    /** Call before {@code setContentView}. */
+    @StyleRes
+    public static int homeAccentThemeRes(@NonNull Context context) {
+        switch (getAccent(context)) {
+            case ACCENT_MIDNIGHT:
+                return R.style.Theme_AeroLauncher_Home_Accent_Midnight;
+            case ACCENT_AQUA:
+                return R.style.Theme_AeroLauncher_Home_Accent_Aqua;
+            case ACCENT_ORANGE:
+                return R.style.Theme_AeroLauncher_Home_Accent_Orange;
+            case ACCENT_VIOLET:
+            default:
+                return R.style.Theme_AeroLauncher_Home_Accent_Violet;
+        }
+    }
+
+    /** Call before {@code setContentView} on settings-style screens. */
     public static void applyAccentOverlay(@NonNull Activity activity) {
         activity.setTheme(accentThemeRes(activity));
+    }
+
+    /** Call before {@code setContentView} on the home activity (keeps wallpaper window). */
+    public static void applyHomeAccentOverlay(@NonNull Activity activity) {
+        activity.setTheme(homeAccentThemeRes(activity));
     }
 
     @NonNull

@@ -103,7 +103,7 @@ public final class AppLibraryAdapter extends RecyclerView.Adapter<RecyclerView.V
         if (viewType == TYPE_HEADER) {
             return new HeaderHolder(inflater.inflate(R.layout.item_library_header, parent, false));
         }
-        return new AppHolder(inflater.inflate(R.layout.item_library_app_row, parent, false));
+        return new AppHolder(inflater.inflate(R.layout.item_library_app_row, parent, false), iconCache);
     }
 
     @Override
@@ -113,9 +113,17 @@ public final class AppLibraryAdapter extends RecyclerView.Adapter<RecyclerView.V
             ((RecentHolder) holder).bind(row);
         } else if (holder instanceof HeaderHolder) {
             ((HeaderHolder) holder).title.setText(row.title);
-        } else if (holder instanceof AppHolder) {
-            ((AppHolder) holder).bind(row.app, iconCache);
+        } else if (holder instanceof AppHolder && row.app != null) {
+            ((AppHolder) holder).bind(row.app);
         }
+    }
+
+    @Override
+    public void onViewRecycled(@NonNull RecyclerView.ViewHolder holder) {
+        if (holder instanceof AppHolder) {
+            ((AppHolder) holder).recycle();
+        }
+        super.onViewRecycled(holder);
     }
 
     @Override
@@ -165,17 +173,28 @@ public final class AppLibraryAdapter extends RecyclerView.Adapter<RecyclerView.V
     static final class AppHolder extends RecyclerView.ViewHolder {
         final ImageView icon;
         final TextView label;
+        final IconCache iconCache;
 
-        AppHolder(@NonNull View itemView) {
+        AppHolder(@NonNull View itemView, @NonNull IconCache iconCache) {
             super(itemView);
+            this.iconCache = iconCache;
             icon = itemView.findViewById(R.id.app_icon);
             label = itemView.findViewById(R.id.app_label);
         }
 
-        void bind(@NonNull AppInfo app, @NonNull IconCache iconCache) {
-            label.setText(app.label);
+        void bind(@NonNull AppInfo app) {
+            if (app.workProfile) {
+                label.setText(app.label.toString()
+                        + itemView.getContext().getString(R.string.work_profile_suffix));
+            } else {
+                label.setText(app.label);
+            }
             iconCache.loadInto(app, icon);
             itemView.setOnClickListener(v -> AppLauncher.launch(v.getContext(), app, icon));
+        }
+
+        void recycle() {
+            iconCache.clearTarget(icon);
         }
     }
 
@@ -225,12 +244,23 @@ public final class AppLibraryAdapter extends RecyclerView.Adapter<RecyclerView.V
         @Override
         public void onBindViewHolder(@NonNull Holder holder, int position) {
             AppInfo app = apps.get(position);
-            holder.label.setText(app.label);
+            if (app.workProfile) {
+                holder.label.setText(app.label.toString()
+                        + holder.itemView.getContext().getString(R.string.work_profile_suffix));
+            } else {
+                holder.label.setText(app.label);
+            }
             holder.folderPreview.setVisibility(View.GONE);
             holder.icon.setVisibility(View.VISIBLE);
             iconCache.loadInto(app, holder.icon);
             holder.itemView.setOnClickListener(v ->
                     AppLauncher.launch(v.getContext(), app, holder.icon));
+        }
+
+        @Override
+        public void onViewRecycled(@NonNull Holder holder) {
+            iconCache.clearTarget(holder.icon);
+            super.onViewRecycled(holder);
         }
 
         @Override

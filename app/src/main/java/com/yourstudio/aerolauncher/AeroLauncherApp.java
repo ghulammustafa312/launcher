@@ -1,6 +1,7 @@
 package com.yourstudio.aerolauncher;
 
 import android.app.Application;
+import android.content.ComponentCallbacks2;
 
 import androidx.annotation.NonNull;
 
@@ -24,6 +25,18 @@ public class AeroLauncherApp extends Application {
         appRepository = new AppRepository(this);
         layoutRepository = new LayoutRepository(this);
         widgetHostManager = new WidgetHostManager(this);
+    }
+
+    @Override
+    public void onTrimMemory(int level) {
+        super.onTrimMemory(level);
+        if (appRepository != null) {
+            appRepository.onTrimMemory(level);
+        }
+        // Drop widget host listening pressure when the UI is gone and memory is tight.
+        if (level >= ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN && widgetHostManager != null) {
+            widgetHostManager.stopListening();
+        }
     }
 
     @NonNull

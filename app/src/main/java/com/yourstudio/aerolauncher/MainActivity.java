@@ -21,7 +21,6 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.PopupMenu;
 import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
@@ -29,7 +28,6 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.splashscreen.SplashScreen;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -56,6 +54,7 @@ import com.yourstudio.aerolauncher.ui.EdgeToEdge;
 import com.yourstudio.aerolauncher.ui.FolderPopup;
 import com.yourstudio.aerolauncher.ui.HomeDragListener;
 import com.yourstudio.aerolauncher.ui.HomeGestureRouter;
+import com.yourstudio.aerolauncher.ui.HomeMenus;
 import com.yourstudio.aerolauncher.ui.HomePagerAdapter;
 import com.yourstudio.aerolauncher.ui.PageDotsController;
 import com.yourstudio.aerolauncher.ui.QuickPanelController;
@@ -139,7 +138,7 @@ public class MainActivity extends AppCompatActivity
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         SplashScreen splashScreen = SplashScreen.installSplashScreen(this);
         splashScreen.setKeepOnScreenCondition(() -> keepSplash);
-        ThemePreferences.applyAccentOverlay(this);
+        ThemePreferences.applyHomeAccentOverlay(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -164,6 +163,7 @@ public class MainActivity extends AppCompatActivity
         pagerAdapter.setWidgetCallbacks(this);
         pagerAdapter.setWidgetHostManager(widgetHostManager);
         homePager.setAdapter(pagerAdapter);
+        homePager.setOffscreenPageLimit(1);
         homePager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
             @Override
             public void onPageSelected(int position) {
@@ -220,6 +220,53 @@ public class MainActivity extends AppCompatActivity
         appRepository.addListener(this);
         layoutRepository.addListener(this);
         appRepository.start();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        // HOME button / launcher re-entry: collapse overlays and return to first page.
+        if (intent != null
+                && Intent.ACTION_MAIN.equals(intent.getAction())
+                && intent.hasCategory(Intent.CATEGORY_HOME)) {
+            resetToHomeSurface();
+        }
+    }
+
+    @Override
+    public void onConfigurationChanged(@NonNull android.content.res.Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        // Activity is not recreated (configChanges); refresh layout metrics only.
+        if (layoutRepository != null) {
+            bindLayout(layoutRepository.getLayout());
+        }
+        if (wallpaperController != null) {
+            wallpaperController.refresh();
+        }
+    }
+
+    @Override
+    public void onTrimMemory(int level) {
+        super.onTrimMemory(level);
+        if (appRepository != null) {
+            appRepository.onTrimMemory(level);
+        }
+    }
+
+    private void resetToHomeSurface() {
+        if (quickPanel != null && quickPanel.isOpen()) {
+            quickPanel.close();
+        }
+        if (searchOpen) {
+            closeSearch();
+        }
+        if (editMode) {
+            setEditMode(false);
+        }
+        if (homePager != null) {
+            homePager.setCurrentItem(0, false);
+        }
     }
 
     @Override
@@ -616,37 +663,28 @@ public class MainActivity extends AppCompatActivity
             int pageIndex,
             @NonNull WidgetPlacement placement,
             @NonNull View anchor) {
-        if (!editMode) {
-            setEditMode(true);
-        }
-        PopupMenu menu = new PopupMenu(this, anchor);
-        menu.getMenu().add(0, 1, 0, R.string.widget_add_to_stack);
-        menu.getMenu().add(0, 2, 1, R.string.widget_resize_taller);
-        menu.getMenu().add(0, 3, 2, R.string.widget_resize_shorter);
-        menu.getMenu().add(0, 4, 3, R.string.widget_remove);
-        menu.setOnMenuItemClickListener(item -> {
-            int id = item.getItemId();
-            if (id == 1) {
+        CharSequence[] labels = new CharSequence[]{
+                getString(R.string.widget_add_to_stack),
+                getString(R.string.widget_resize_taller),
+                getString(R.string.widget_resize_shorter),
+                getString(R.string.widget_remove),
+                getString(R.string.action_arrange)
+        };
+        HomeMenus.showActions(this, getString(R.string.widget_actions_title), labels, (dialog, which) -> {
+            if (which == 0) {
                 pendingWidgetPage = pageIndex;
                 pendingStackTarget = placement;
                 showWidgetPicker();
-                return true;
-            }
-            if (id == 2) {
+            } else if (which == 1) {
                 onResizeWidget(placement, Math.min(4, placement.spanRows + 1));
-                return true;
-            }
-            if (id == 3) {
+            } else if (which == 2) {
                 onResizeWidget(placement, Math.max(2, placement.spanRows - 1));
-                return true;
-            }
-            if (id == 4) {
+            } else if (which == 3) {
                 onRemoveWidget(placement);
-                return true;
+            } else if (which == 4) {
+                setEditMode(true);
             }
-            return false;
         });
-        menu.show();
     }
 
     private void showWidgetPicker() {
@@ -658,7 +696,7 @@ public class MainActivity extends AppCompatActivity
                     ? option.label
                     : option.label + " · " + option.provider.getPackageName();
         }
-        new AlertDialog.Builder(this)
+        HomeMenus.builder(this)
                 .setTitle(R.string.widget_pick_title)
                 .setItems(labels, (dialog, which) ->
                         beginInstall(options.get(which).provider))
@@ -788,8 +826,12 @@ public class MainActivity extends AppCompatActivity
             @NonNull HomeItem item,
             @NonNull ItemLocation location,
             @NonNull View anchor) {
-        setEditMode(true);
-        showItemMenu(item, location, anchor);
+        // Do not enter edit mode here — that left remove "X" badges stuck on screen
+        // while the transparent PopupMenu was unreadable over wallpaper.
+        if (editMode) {
+            return;
+        }
+        showItemMenu(item, location);
     }
 
     @Override
@@ -804,68 +846,66 @@ public class MainActivity extends AppCompatActivity
         layoutRepository.moveOrMerge(from, to, capacity);
     }
 
-    private void showItemMenu(
-            @NonNull HomeItem item,
-            @NonNull ItemLocation location,
-            @NonNull View anchor) {
-        PopupMenu menu = new PopupMenu(this, anchor);
+    private void showItemMenu(@NonNull HomeItem item, @NonNull ItemLocation location) {
         if (item.isFolder()) {
-            menu.getMenu().add(0, 1, 0, R.string.action_rename_folder);
-            menu.getMenu().add(0, 2, 1, R.string.remove_from_home);
-        } else {
-            menu.getMenu().add(0, 3, 0, R.string.action_app_info);
-            menu.getMenu().add(0, 4, 1, R.string.action_uninstall);
-            menu.getMenu().add(0, 5, 2, R.string.action_hide);
-            boolean locked = item.appKey != null && AppLockPreferences.isLocked(this, item.appKey);
-            menu.getMenu().add(0, 6, 3, locked ? R.string.action_unlock_app : R.string.action_lock_app);
-            menu.getMenu().add(0, 2, 4, R.string.remove_from_home);
+            CharSequence[] labels = new CharSequence[]{
+                    getString(R.string.action_rename_folder),
+                    getString(R.string.remove_from_home),
+                    getString(R.string.action_arrange)
+            };
+            HomeMenus.showActions(this, getString(R.string.folder_actions_title), labels, (d, which) -> {
+                if (which == 0) {
+                    FolderPopup.show(
+                            this,
+                            item,
+                            appsByKey,
+                            appRepository.getIconCache(),
+                            layoutRepository);
+                } else if (which == 1) {
+                    layoutRepository.removeFromHome(location);
+                } else if (which == 2) {
+                    setEditMode(true);
+                }
+            });
+            return;
         }
-        menu.setOnMenuItemClickListener(menuItem -> {
-            int id = menuItem.getItemId();
-            if (id == 1) {
-                FolderPopup.show(
-                        this,
-                        item,
-                        appsByKey,
-                        appRepository.getIconCache(),
-                        layoutRepository);
-                return true;
-            }
-            if (id == 2) {
-                layoutRepository.removeFromHome(location);
-                return true;
-            }
-            if (id == 3 && item.appKey != null) {
+
+        boolean locked = item.appKey != null && AppLockPreferences.isLocked(this, item.appKey);
+        CharSequence[] labels = new CharSequence[]{
+                getString(R.string.action_app_info),
+                getString(R.string.action_uninstall),
+                getString(R.string.action_hide),
+                getString(locked ? R.string.action_unlock_app : R.string.action_lock_app),
+                getString(R.string.remove_from_home),
+                getString(R.string.action_arrange)
+        };
+        HomeMenus.showActions(this, getString(R.string.app_actions_title), labels, (d, which) -> {
+            if (which == 0 && item.appKey != null) {
                 AppInfo app = appsByKey.get(item.appKey);
                 if (app != null) {
                     AppActions.openAppInfo(this, app);
                 }
-                return true;
-            }
-            if (id == 4 && item.appKey != null) {
+            } else if (which == 1 && item.appKey != null) {
                 AppInfo app = appsByKey.get(item.appKey);
                 if (app != null) {
                     AppActions.uninstall(this, app);
                 }
-                return true;
-            }
-            if (id == 5 && item.appKey != null) {
+            } else if (which == 2 && item.appKey != null) {
                 layoutRepository.hideApp(item.appKey);
                 Toast.makeText(this, R.string.app_hidden, Toast.LENGTH_SHORT).show();
-                return true;
-            }
-            if (id == 6 && item.appKey != null) {
-                boolean locked = AppLockPreferences.isLocked(this, item.appKey);
-                AppLockPreferences.setLocked(this, item.appKey, !locked);
+            } else if (which == 3 && item.appKey != null) {
+                boolean wasLocked = AppLockPreferences.isLocked(this, item.appKey);
+                AppLockPreferences.setLocked(this, item.appKey, !wasLocked);
                 Toast.makeText(
                         this,
-                        locked ? R.string.app_unlocked : R.string.app_locked,
+                        wasLocked ? R.string.app_unlocked : R.string.app_locked,
                         Toast.LENGTH_SHORT).show();
-                return true;
+            } else if (which == 4) {
+                layoutRepository.removeFromHome(location);
+            } else if (which == 5) {
+                setEditMode(true);
             }
-            return false;
         });
-        menu.show();
     }
 
     private void updateDefaultLauncherBanner() {

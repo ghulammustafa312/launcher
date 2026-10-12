@@ -110,7 +110,7 @@ public final class AppGridAdapter extends RecyclerView.Adapter<AppGridAdapter.Ho
         }
 
         holder.iconContent.setVisibility(View.VISIBLE);
-        holder.label.setText(labelFor(item));
+        holder.label.setText(labelFor(holder.itemView.getContext(), item));
         if (item.isFolder()) {
             holder.icon.setVisibility(View.GONE);
             holder.folderPreview.setVisibility(View.VISIBLE);
@@ -195,12 +195,25 @@ public final class AppGridAdapter extends RecyclerView.Adapter<AppGridAdapter.Ho
     }
 
     @NonNull
-    private String labelFor(@NonNull HomeItem item) {
+    private String labelFor(@NonNull android.content.Context context, @NonNull HomeItem item) {
         if (item.isFolder()) {
             return item.title;
         }
         AppInfo app = item.appKey != null ? appsByKey.get(item.appKey) : null;
-        return app != null ? app.label.toString() : "";
+        if (app == null) {
+            return "";
+        }
+        if (app.workProfile) {
+            return app.label.toString() + context.getString(R.string.work_profile_suffix);
+        }
+        return app.label.toString();
+    }
+
+    @Override
+    public void onViewRecycled(@NonNull Holder holder) {
+        iconCache.clearTarget(holder.icon);
+        holder.notificationBadge.setVisibility(View.GONE);
+        super.onViewRecycled(holder);
     }
 
     @Override
