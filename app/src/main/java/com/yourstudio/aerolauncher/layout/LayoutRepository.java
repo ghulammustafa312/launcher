@@ -351,8 +351,9 @@ public final class LayoutRepository {
                     entity.id,
                     stack,
                     ids,
-                    entity.spanRows > 0 ? entity.spanRows : 2,
+                    2,
                     entity.rank);
+            placement.spanColumns = entity.cellIndex == 4 ? 4 : 2;
             homeLayout.ensureWidgetPage(entity.pageIndex);
             homeLayout.pageWidgets.get(entity.pageIndex).add(placement);
         }
@@ -453,7 +454,7 @@ public final class LayoutRepository {
                 LayoutItemEntity.CONTAINER_PAGE_WIDGETS,
                 null,
                 page,
-                -1,
+                widget.columnSpan(),
                 -1,
                 widget.rank,
                 null,

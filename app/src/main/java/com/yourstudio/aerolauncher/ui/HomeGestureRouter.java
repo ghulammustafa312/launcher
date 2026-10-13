@@ -74,10 +74,10 @@ public final class HomeGestureRouter {
                         if (Math.abs(dy) < Math.abs(dx) * 1.25f) {
                             return false;
                         }
-                        if (Math.abs(velocityY) < 900) {
+                        if (Math.abs(velocityY) < 700) {
                             return false;
                         }
-                        if (dy > 140) {
+                        if (dy > 120) {
                             if (downY <= topEdgePx || e1.getY() <= topEdgePx) {
                                 callbacks.onSwipeDownQuickPanel();
                             } else {

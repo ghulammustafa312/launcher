@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <item name="tag_icon_key" type="id" />
+    <item name="tag_home_grid_width" type="id" />
+    <item name="tag_home_grid_height" type="id" />
 </resources>

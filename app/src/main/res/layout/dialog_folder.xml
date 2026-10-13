@@ -17,18 +17,27 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@android:color/transparent"
+            android:fontFamily="@font/inter"
+            android:gravity="center_horizontal"
             android:hint="@string/folder_name_hint"
             android:inputType="textCapWords"
             android:maxLines="1"
-            android:textColor="?attr/colorOnBackground"
+            android:textColor="@color/white"
             android:textSize="20sp" />
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/folder_grid"
+        <androidx.viewpager2.widget.ViewPager2
+            android:id="@+id/folder_pager"
+            android:layout_width="match_parent"
+            android:layout_height="270dp"
+            android:layout_marginTop="8dp" />
+
+        <LinearLayout
+            android:id="@+id/folder_page_dots"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:overScrollMode="never" />
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingTop="8dp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/folder_done"

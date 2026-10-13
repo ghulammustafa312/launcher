@@ -34,8 +34,6 @@ public final class WidgetStackFrame extends FrameLayout {
         void onLongPress(@NonNull WidgetPlacement placement, @NonNull View anchor);
     }
 
-    private static final int ROW_HEIGHT_DP = 72;
-
     private final FrameLayout hostContainer;
     private final LinearLayout dots;
     private final LinearLayout editBar;
@@ -96,13 +94,13 @@ public final class WidgetStackFrame extends FrameLayout {
                 });
 
         resizeUp.setOnClickListener(v -> {
-            if (placement != null && listener != null && placement.spanRows < 4) {
-                listener.onResize(placement, placement.spanRows + 1);
+            if (placement != null && listener != null && placement.columnSpan() < 4) {
+                listener.onResize(placement, 4);
             }
         });
         resizeDown.setOnClickListener(v -> {
-            if (placement != null && listener != null && placement.spanRows > 2) {
-                listener.onResize(placement, placement.spanRows - 1);
+            if (placement != null && listener != null && placement.columnSpan() > 2) {
+                listener.onResize(placement, 2);
             }
         });
         remove.setOnClickListener(v -> {
@@ -131,18 +129,23 @@ public final class WidgetStackFrame extends FrameLayout {
         currentIndex = 0;
         interceptingSwipe = false;
 
-        int heightPx = dp(placement.spanRows * ROW_HEIGHT_DP);
+        int heightPx = getResources().getDimensionPixelSize(R.dimen.widget_card_height);
+        int span = placement.columnSpan();
         ViewGroup.LayoutParams lp = getLayoutParams();
-        if (lp == null) {
-            lp = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, heightPx);
+        if (lp instanceof LinearLayout.LayoutParams) {
+            LinearLayout.LayoutParams rowParams = (LinearLayout.LayoutParams) lp;
+            rowParams.width = 0;
+            rowParams.height = heightPx;
+            rowParams.weight = span;
+            setLayoutParams(rowParams);
         } else {
-            lp.height = heightPx;
+            LinearLayout.LayoutParams rowParams =
+                    new LinearLayout.LayoutParams(0, heightPx, span);
+            setLayoutParams(rowParams);
         }
-        setLayoutParams(lp);
 
-        int widthDp = Math.max(110, pxToDp(getResources().getDisplayMetrics().widthPixels) - 32);
-        int heightDp = placement.spanRows * ROW_HEIGHT_DP;
+        int widthDp = span == 4 ? 250 : 110;
+        int heightDp = pxToDp(heightPx);
 
         for (Integer appWidgetId : placement.appWidgetIds) {
             View hostView = hostManager.createView(appWidgetId, widthDp, heightDp);
@@ -162,8 +165,8 @@ public final class WidgetStackFrame extends FrameLayout {
         }
         bindDots();
         editBar.setVisibility(editMode ? View.VISIBLE : View.GONE);
-        resizeUp.setEnabled(placement.spanRows < 4);
-        resizeDown.setEnabled(placement.spanRows > 2);
+        resizeUp.setEnabled(placement.columnSpan() < 4);
+        resizeDown.setEnabled(placement.columnSpan() > 2);
     }
 
     private void showPage(int index) {

@@ -165,9 +165,10 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void adjustGrid(int columnDelta, int rowDelta) {
-        columns = Math.max(3, Math.min(6, columns + columnDelta));
-        rows = Math.max(4, Math.min(8, rows + rowDelta));
-        HomePreferences.setGridSize(this, columns, rows);
+        HomePreferences.setGridSize(
+                this, HomePreferences.DEFAULT_COLUMNS, HomePreferences.DEFAULT_ROWS);
+        columns = HomePreferences.getColumns(this);
+        rows = HomePreferences.getRows(this);
         refreshGridLabels();
     }
 

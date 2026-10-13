@@ -2,9 +2,11 @@
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:configure="com.yourstudio.aerolauncher.widgets.builtin.NotesWidgetConfigureActivity"
     android:initialLayout="@layout/widget_notes"
-    android:minWidth="180dp"
     android:minHeight="110dp"
+    android:minWidth="250dp"
     android:previewImage="@drawable/ic_launcher"
     android:resizeMode="horizontal|vertical"
+    android:targetCellHeight="2"
+    android:targetCellWidth="4"
     android:updatePeriodMillis="0"
     android:widgetCategory="home_screen" />

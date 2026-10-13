@@ -33,14 +33,15 @@ public final class HomeDragListener implements View.OnDragListener {
             case DragEvent.ACTION_DRAG_STARTED:
                 return hasAeroMime(event);
             case DragEvent.ACTION_DRAG_ENTERED:
-                v.animate().scaleX(1.08f).scaleY(1.08f).setDuration(120).start();
+                Motion.springScale(v, 1.06f);
                 return true;
             case DragEvent.ACTION_DRAG_EXITED:
             case DragEvent.ACTION_DRAG_ENDED:
-                v.animate().scaleX(1f).scaleY(1f).setDuration(120).start();
+                Motion.springScale(v, 1f);
                 return true;
             case DragEvent.ACTION_DROP:
-                v.animate().scaleX(1f).scaleY(1f).setDuration(120).start();
+                Motion.springScale(v, 1f);
+                Motion.tick(v);
                 ClipData data = event.getClipData();
                 if (data == null || data.getItemCount() == 0) {
                     return false;

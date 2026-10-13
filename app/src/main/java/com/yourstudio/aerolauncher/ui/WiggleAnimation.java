@@ -18,6 +18,10 @@ public final class WiggleAnimation {
     }
 
     public static void start(@NonNull View view) {
+        if (Motion.reduced(view.getContext())) {
+            stop(view);
+            return;
+        }
         if (view.getAnimation() instanceof RotateAnimation) {
             return;
         }

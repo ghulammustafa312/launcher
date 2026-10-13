@@ -3,27 +3,27 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/bg_builtin_widget"
-    android:gravity="center"
+    android:gravity="center_vertical"
     android:orientation="vertical"
-    android:padding="12dp">
+    android:padding="16dp">
 
     <TextClock
         android:id="@+id/widget_clock_time"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:format12Hour="h:mm"
         android:format24Hour="HH:mm"
         android:includeFontPadding="false"
-        android:textColor="@color/white"
-        android:textSize="42sp" />
+        android:textColor="@color/widget_on_card"
+        android:textSize="36sp" />
 
     <TextClock
         android:id="@+id/widget_clock_date"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
         android:format12Hour="EEEE, MMM d"
         android:format24Hour="EEEE, MMM d"
-        android:textColor="@color/white_70"
-        android:textSize="14sp" />
+        android:textColor="@color/widget_on_card_soft"
+        android:textSize="13sp" />
 </LinearLayout>

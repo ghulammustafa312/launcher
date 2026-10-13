@@ -16,8 +16,10 @@ public final class WidgetPlacement {
     public final boolean stack;
     @NonNull
     public final List<Integer> appWidgetIds;
-    /** Height units (2–4). Width is full page. */
+    /** Height in icon-grid rows. iOS cards use 2. */
     public int spanRows;
+    /** Width in the 4-column icon grid: 2 (small) or 4 (medium). */
+    public int spanColumns = 2;
     public int rank;
 
     public WidgetPlacement(
@@ -29,8 +31,12 @@ public final class WidgetPlacement {
         this.id = id;
         this.stack = stack;
         this.appWidgetIds = new ArrayList<>(appWidgetIds);
-        this.spanRows = Math.max(2, Math.min(4, spanRows));
+        this.spanRows = 2;
         this.rank = rank;
+    }
+
+    public int columnSpan() {
+        return spanColumns >= 4 ? 4 : 2;
     }
 
     @NonNull
@@ -47,6 +53,8 @@ public final class WidgetPlacement {
 
     @NonNull
     public WidgetPlacement copy() {
-        return new WidgetPlacement(id, stack, appWidgetIds, spanRows, rank);
+        WidgetPlacement copy = new WidgetPlacement(id, stack, appWidgetIds, spanRows, rank);
+        copy.spanColumns = columnSpan();
+        return copy;
     }
 }

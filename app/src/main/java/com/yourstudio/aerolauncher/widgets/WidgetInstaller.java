@@ -13,8 +13,10 @@ import androidx.annotation.Nullable;
 
 import com.yourstudio.aerolauncher.R;
 import com.yourstudio.aerolauncher.widgets.builtin.BatteryWidgetProvider;
+import com.yourstudio.aerolauncher.widgets.builtin.CalendarWidgetProvider;
 import com.yourstudio.aerolauncher.widgets.builtin.ClockWidgetProvider;
 import com.yourstudio.aerolauncher.widgets.builtin.NotesWidgetProvider;
+import com.yourstudio.aerolauncher.widgets.builtin.WeatherWidgetProvider;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -78,6 +80,14 @@ public final class WidgetInstaller {
         options.add(new Option(
                 context.getString(R.string.widget_notes_name),
                 new ComponentName(context, NotesWidgetProvider.class),
+                true));
+        options.add(new Option(
+                context.getString(R.string.widget_weather_name),
+                new ComponentName(context, WeatherWidgetProvider.class),
+                true));
+        options.add(new Option(
+                context.getString(R.string.widget_calendar_name),
+                new ComponentName(context, CalendarWidgetProvider.class),
                 true));
 
         List<AppWidgetProviderInfo> providers =

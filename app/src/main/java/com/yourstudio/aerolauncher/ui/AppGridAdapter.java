@@ -3,6 +3,8 @@ package com.yourstudio.aerolauncher.ui;
 import android.content.ClipData;
 import android.content.ClipDescription;
 import android.os.Build;
+import android.util.DisplayMetrics;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,6 +14,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.yourstudio.aerolauncher.R;
@@ -32,6 +35,8 @@ import java.util.Map;
  */
 public final class AppGridAdapter extends RecyclerView.Adapter<AppGridAdapter.Holder> {
 
+    public static final int COLUMNS = 4;
+    public static final int ROWS = 6;
     public static final String DRAG_MIME = "application/x-aero-home-item";
 
     public interface Callbacks {
@@ -52,6 +57,7 @@ public final class AppGridAdapter extends RecyclerView.Adapter<AppGridAdapter.Ho
     private final Map<String, AppInfo> appsByKey;
     private final List<HomeItem> cells = new ArrayList<>();
     private int pageIndex;
+    private int cellHeightPx;
     private Callbacks callbacks;
 
     public AppGridAdapter(
@@ -64,6 +70,66 @@ public final class AppGridAdapter extends RecyclerView.Adapter<AppGridAdapter.Ho
 
     public void setCallbacks(@Nullable Callbacks callbacks) {
         this.callbacks = callbacks;
+    }
+
+    /**
+     * Locks the page to 4 columns and distributes leftover space as equal insets
+     * so six rows fit every screen size. Sizes come from dp/sp resources.
+     */
+    public static void install(@NonNull RecyclerView grid) {
+        GridLayoutManager layoutManager = new GridLayoutManager(grid.getContext(), COLUMNS);
+        grid.setLayoutManager(layoutManager);
+        grid.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) ->
+                applyEqualSpacing((RecyclerView) v));
+    }
+
+    private static void applyEqualSpacing(@NonNull RecyclerView grid) {
+        int width = grid.getWidth();
+        int height = grid.getHeight();
+        if (width <= 0 || height <= 0) {
+            return;
+        }
+        Integer appliedWidth = (Integer) grid.getTag(R.id.tag_home_grid_width);
+        Integer appliedHeight = (Integer) grid.getTag(R.id.tag_home_grid_height);
+        if (appliedWidth != null && appliedWidth == width
+                && appliedHeight != null && appliedHeight == height) {
+            return;
+        }
+        grid.setTag(R.id.tag_home_grid_width, width);
+        grid.setTag(R.id.tag_home_grid_height, height);
+
+        int icon = grid.getResources().getDimensionPixelSize(R.dimen.home_icon_size);
+        int labelGap = grid.getResources().getDimensionPixelSize(R.dimen.home_icon_label_gap);
+        float labelPx = grid.getResources().getDimension(R.dimen.home_label_text_size);
+        int contentHeight = icon + labelGap + Math.round(labelPx);
+        int padH = equalInset(width, COLUMNS, icon);
+        int padV = equalInset(height, ROWS, contentHeight);
+        grid.setPadding(padH, padV, padH, padV);
+        grid.setClipToPadding(false);
+        int cellHeight = Math.max(1, (height - padV * 2) / ROWS);
+        grid.post(() -> {
+            RecyclerView.Adapter<?> raw = grid.getAdapter();
+            if (raw instanceof AppGridAdapter) {
+                ((AppGridAdapter) raw).setCellHeight(cellHeight);
+            }
+        });
+    }
+
+    /** Inset that makes the outer margin match the gap between icons. */
+    private static int equalInset(int available, int count, int content) {
+        float slack = (available / (float) count) - content;
+        if (slack <= 0f || count <= 0) {
+            return 0;
+        }
+        return Math.max(0, Math.round(slack * count / (2f * (count + 1))));
+    }
+
+    void setCellHeight(int heightPx) {
+        if (heightPx <= 0 || heightPx == cellHeightPx) {
+            return;
+        }
+        cellHeightPx = heightPx;
+        notifyDataSetChanged();
     }
 
     public void submit(int pageIndex, @NonNull List<HomeItem> pageCells) {
@@ -88,11 +154,14 @@ public final class AppGridAdapter extends RecyclerView.Adapter<AppGridAdapter.Ho
     public Holder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_app_icon, parent, false);
-        return new Holder(view);
+        Holder holder = new Holder(view);
+        applyLabelShadow(holder.label);
+        return holder;
     }
 
     @Override
     public void onBindViewHolder(@NonNull Holder holder, int position) {
+        applyCellSize(holder.itemView);
         HomeItem item = cells.get(position);
         ItemLocation location = ItemLocation.workspace(pageIndex, position);
         boolean editMode = callbacks != null && callbacks.isEditMode();
@@ -113,10 +182,14 @@ public final class AppGridAdapter extends RecyclerView.Adapter<AppGridAdapter.Ho
         holder.label.setText(labelFor(holder.itemView.getContext(), item));
         if (item.isFolder()) {
             holder.icon.setVisibility(View.GONE);
-            holder.folderPreview.setVisibility(View.VISIBLE);
+            holder.folderPreview.setVisibility(View.GONE);
+            holder.folderMini.setVisibility(View.VISIBLE);
             holder.notificationBadge.setVisibility(View.GONE);
+            bindFolderMini(holder, item);
         } else {
             holder.folderPreview.setVisibility(View.GONE);
+            holder.folderMini.setVisibility(View.GONE);
+            clearFolderMini(holder);
             holder.icon.setVisibility(View.VISIBLE);
             AppInfo app = item.appKey != null ? appsByKey.get(item.appKey) : null;
             if (app != null) {
@@ -143,6 +216,7 @@ public final class AppGridAdapter extends RecyclerView.Adapter<AppGridAdapter.Ho
 
         holder.itemView.setOnClickListener(v -> {
             if (callbacks != null && !callbacks.isEditMode()) {
+                Motion.pop(holder.iconContent);
                 callbacks.onItemClick(item, holder.iconContent);
             }
         });
@@ -151,13 +225,54 @@ public final class AppGridAdapter extends RecyclerView.Adapter<AppGridAdapter.Ho
             if (callbacks == null) {
                 return false;
             }
-            boolean alreadyEditing = callbacks.isEditMode();
             callbacks.onItemLongClick(item, location, v);
-            if (alreadyEditing) {
+            if (callbacks.isEditMode()) {
+                Motion.tick(v);
                 startDrag(v, item, location);
             }
             return true;
         });
+    }
+
+    private void applyCellSize(@NonNull View itemView) {
+        if (cellHeightPx <= 0) {
+            return;
+        }
+        ViewGroup.LayoutParams params = itemView.getLayoutParams();
+        if (params != null && params.height != cellHeightPx) {
+            params.height = cellHeightPx;
+            itemView.setLayoutParams(params);
+        }
+    }
+
+    static void applyLabelShadow(@NonNull TextView label) {
+        DisplayMetrics metrics = label.getResources().getDisplayMetrics();
+        float radius = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2f, metrics);
+        float dy = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1f, metrics);
+        label.setShadowLayer(radius, 0f, dy, 0x66000000);
+    }
+
+    private void bindFolderMini(@NonNull Holder holder, @NonNull HomeItem item) {
+        List<String> keys = item.folderAppKeys;
+        for (int i = 0; i < holder.miniIcons.length; i++) {
+            ImageView slot = holder.miniIcons[i];
+            if (i >= keys.size()) {
+                iconCache.clearTarget(slot);
+                continue;
+            }
+            AppInfo app = appsByKey.get(keys.get(i));
+            if (app != null) {
+                iconCache.loadInto(app, slot);
+            } else {
+                slot.setImageResource(R.drawable.ic_app_placeholder);
+            }
+        }
+    }
+
+    private void clearFolderMini(@NonNull Holder holder) {
+        for (ImageView slot : holder.miniIcons) {
+            iconCache.clearTarget(slot);
+        }
     }
 
     private void bindNotificationBadge(@NonNull Holder holder, @NonNull AppInfo app) {
@@ -212,6 +327,7 @@ public final class AppGridAdapter extends RecyclerView.Adapter<AppGridAdapter.Ho
     @Override
     public void onViewRecycled(@NonNull Holder holder) {
         iconCache.clearTarget(holder.icon);
+        clearFolderMini(holder);
         holder.notificationBadge.setVisibility(View.GONE);
         super.onViewRecycled(holder);
     }
@@ -238,6 +354,8 @@ public final class AppGridAdapter extends RecyclerView.Adapter<AppGridAdapter.Ho
         final View iconContent;
         final ImageView icon;
         final ImageView folderPreview;
+        final View folderMini;
+        final ImageView[] miniIcons;
         final TextView label;
         final ImageButton removeBadge;
         final TextView notificationBadge;
@@ -247,6 +365,18 @@ public final class AppGridAdapter extends RecyclerView.Adapter<AppGridAdapter.Ho
             iconContent = itemView.findViewById(R.id.icon_content);
             icon = itemView.findViewById(R.id.app_icon);
             folderPreview = itemView.findViewById(R.id.folder_preview);
+            folderMini = itemView.findViewById(R.id.folder_mini);
+            miniIcons = new ImageView[]{
+                    itemView.findViewById(R.id.mini_icon_0),
+                    itemView.findViewById(R.id.mini_icon_1),
+                    itemView.findViewById(R.id.mini_icon_2),
+                    itemView.findViewById(R.id.mini_icon_3),
+                    itemView.findViewById(R.id.mini_icon_4),
+                    itemView.findViewById(R.id.mini_icon_5),
+                    itemView.findViewById(R.id.mini_icon_6),
+                    itemView.findViewById(R.id.mini_icon_7),
+                    itemView.findViewById(R.id.mini_icon_8)
+            };
             label = itemView.findViewById(R.id.app_label);
             removeBadge = itemView.findViewById(R.id.remove_badge);
             notificationBadge = itemView.findViewById(R.id.notification_badge);

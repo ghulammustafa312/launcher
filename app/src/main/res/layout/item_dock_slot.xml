@@ -3,12 +3,14 @@
     android:layout_width="0dp"
     android:layout_height="match_parent"
     android:layout_weight="1"
-    android:padding="6dp">
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    android:padding="4dp">
 
     <ImageView
         android:id="@+id/dock_icon"
-        android:layout_width="@dimen/app_icon_size"
-        android:layout_height="@dimen/app_icon_size"
+        android:layout_width="@dimen/dock_icon_size"
+        android:layout_height="@dimen/dock_icon_size"
         android:layout_gravity="center"
         android:contentDescription="@null"
         android:scaleType="fitCenter" />

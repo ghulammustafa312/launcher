@@ -10,7 +10,7 @@
     <string name="settings_appearance_hint">Choose light, dark, or follow the system (auto).</string>
     <string name="settings_palette">Palette</string>
     <string name="settings_grid">Home grid</string>
-    <string name="settings_grid_hint">Default is 4 columns by 6 rows. Changes apply when you return home.</string>
+    <string name="settings_grid_hint">The home screen is a fixed 4 column by 6 row grid.</string>
     <string name="settings_backup">Layout backup</string>
     <string name="settings_backup_hint">Save or restore your home layout with the system file picker. No storage permission is used.</string>
     <string name="settings_gestures">Gestures and lock</string>
@@ -56,6 +56,7 @@
     <string name="library_other">Other</string>
     <string name="library_alphabetical">Alphabetical</string>
 
+    <string name="search_pill">Search</string>
     <string name="search_hint">Search apps and settings</string>
     <string name="search_close">Close search</string>
     <string name="search_section_apps">App</string>
@@ -86,6 +87,9 @@
     <string name="widget_clock_name">Aero Clock</string>
     <string name="widget_battery_name">Aero Battery</string>
     <string name="widget_notes_name">Aero Notes</string>
+    <string name="widget_weather_name">Aero Weather</string>
+    <string name="widget_calendar_name">Aero Calendar</string>
+    <string name="widget_calendar_no_events">No events</string>
     <string name="widget_notes_title">Notes</string>
     <string name="widget_notes_hint">Write a note…</string>
     <string name="widget_notes_empty">Tap to add a note</string>
@@ -102,8 +106,8 @@
     <string name="widget_section_builtin">Aero widgets</string>
     <string name="widget_section_system">Installed widgets</string>
     <string name="widget_add_to_stack">Add to stack</string>
-    <string name="widget_resize_taller">Make taller</string>
-    <string name="widget_resize_shorter">Make shorter</string>
+    <string name="widget_resize_taller">Medium 4×2</string>
+    <string name="widget_resize_shorter">Small 2×2</string>
     <string name="widget_remove">Remove widget</string>
     <string name="widget_bind_denied">Widget permission denied</string>
     <string name="widget_configure_failed">Could not configure widget</string>
@@ -129,10 +133,12 @@
     <string name="wallpaper_title">Wallpaper</string>
     <string name="wallpaper_none">System wallpaper</string>
     <string name="wallpaper_builtin">Aero originals</string>
-    <string name="wallpaper_dusk">Dusk</string>
-    <string name="wallpaper_aurora">Aurora</string>
-    <string name="wallpaper_mist">Mist</string>
-    <string name="wallpaper_ember">Ember</string>
+    <string name="wallpaper_dusk">Blue</string>
+    <string name="wallpaper_aurora">Purple</string>
+    <string name="wallpaper_mist">Pink</string>
+    <string name="wallpaper_ember">Sky</string>
+    <string name="wallpaper_parallax">Parallax wallpaper</string>
+    <string name="wallpaper_parallax_hint">Uses the rotation sensor. Off by default.</string>
     <string name="wallpaper_photo">Choose photo</string>
     <string name="wallpaper_blur">Blur</string>
     <string name="wallpaper_blur_value">Blur: %1$d</string>

@@ -3,6 +3,7 @@ package com.yourstudio.aerolauncher.ui;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -152,7 +153,7 @@ public final class HomePagerAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             return new LibraryHolder(view, iconCache);
         }
         View view = inflater.inflate(R.layout.page_home_grid, parent, false);
-        return new PageHolder(view, iconCache, appsByKey, columns, iconViewPool);
+        return new PageHolder(view, iconCache, appsByKey, iconViewPool);
     }
 
     @Override
@@ -189,18 +190,17 @@ public final class HomePagerAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 @NonNull View itemView,
                 @NonNull IconCache iconCache,
                 @NonNull Map<String, AppInfo> appsByKey,
-                int columns,
                 @NonNull RecyclerView.RecycledViewPool iconViewPool) {
             super(itemView);
             widgetZone = itemView.findViewById(R.id.widget_zone);
             addWidgetButton = itemView.findViewById(R.id.add_widget_button);
             grid = itemView.findViewById(R.id.page_grid);
             adapter = new AppGridAdapter(iconCache, appsByKey);
-            grid.setLayoutManager(new GridLayoutManager(itemView.getContext(), columns));
             grid.setRecycledViewPool(iconViewPool);
-            grid.setItemViewCacheSize(Math.max(12, columns * 3));
+            grid.setItemViewCacheSize(AppGridAdapter.COLUMNS * AppGridAdapter.ROWS);
             grid.setHasFixedSize(true);
             grid.setAdapter(adapter);
+            AppGridAdapter.install(grid);
             grid.setOverScrollMode(View.OVER_SCROLL_NEVER);
             grid.setNestedScrollingEnabled(false);
         }
@@ -214,8 +214,8 @@ public final class HomePagerAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 @Nullable WidgetCallbacks widgetCallbacks,
                 @Nullable WidgetHostManager hostManager) {
             GridLayoutManager layoutManager = (GridLayoutManager) grid.getLayoutManager();
-            if (layoutManager != null && layoutManager.getSpanCount() != columns) {
-                layoutManager.setSpanCount(columns);
+            if (layoutManager != null && layoutManager.getSpanCount() != AppGridAdapter.COLUMNS) {
+                layoutManager.setSpanCount(AppGridAdapter.COLUMNS);
             }
             adapter.setCallbacks(callbacks);
             adapter.submit(pageIndex, cells);
@@ -232,8 +232,28 @@ public final class HomePagerAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             if (hostManager == null || widgetCallbacks == null) {
                 return;
             }
+            LinearLayout row = null;
+            int used = 0;
             for (WidgetPlacement placement : widgets) {
+                int span = placement.columnSpan();
+                if (row == null || used + span > 4) {
+                    row = new LinearLayout(itemView.getContext());
+                    row.setOrientation(LinearLayout.HORIZONTAL);
+                    row.setWeightSum(4f);
+                    row.setLayoutParams(new LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT));
+                    widgetZone.addView(row);
+                    used = 0;
+                }
                 WidgetStackFrame frame = new WidgetStackFrame(itemView.getContext());
+                LinearLayout.LayoutParams slot = new LinearLayout.LayoutParams(
+                        0,
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        span);
+                int gap = itemView.getResources().getDimensionPixelSize(R.dimen.home_icon_label_gap);
+                slot.setMargins(gap, gap, gap, gap);
+                frame.setLayoutParams(slot);
                 frame.bind(placement, hostManager, editMode, new WidgetStackFrame.Listener() {
                     @Override
                     public void onRemove(@NonNull WidgetPlacement p) {
@@ -250,7 +270,8 @@ public final class HomePagerAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                         widgetCallbacks.onWidgetLongClick(pageIndex, p, anchor);
                     }
                 });
-                widgetZone.addView(frame);
+                row.addView(frame);
+                used += span;
             }
         }
     }

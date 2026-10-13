@@ -6,6 +6,7 @@
     android:layout_height="wrap_content"
     android:paddingTop="16dp"
     android:paddingBottom="8dp"
+    android:fontFamily="@font/inter"
     android:textColor="@color/home_label"
     android:textSize="16sp"
     android:textStyle="bold" />

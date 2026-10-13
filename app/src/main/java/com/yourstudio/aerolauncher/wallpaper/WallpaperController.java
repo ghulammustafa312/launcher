@@ -7,6 +7,10 @@ import android.graphics.Canvas;
 import android.graphics.RenderEffect;
 import android.graphics.Shader;
 import android.graphics.drawable.Drawable;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.net.Uri;
 import android.os.Build;
 import android.view.View;
@@ -30,7 +34,33 @@ public final class WallpaperController {
     private final Context appContext;
     private final ImageView target;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final SensorEventListener parallaxListener = new SensorEventListener() {
+        @Override
+        public void onSensorChanged(SensorEvent event) {
+            if (event.sensor.getType() != Sensor.TYPE_ROTATION_VECTOR) {
+                return;
+            }
+            float[] rotation = new float[9];
+            float[] orientation = new float[3];
+            SensorManager.getRotationMatrixFromVector(rotation, event.values);
+            SensorManager.getOrientation(rotation, orientation);
+            float density = target.getResources().getDisplayMetrics().density;
+            float max = 12f * density;
+            float x = clamp(orientation[2] * 8f * density, -max, max);
+            float y = clamp(-orientation[1] * 8f * density, -max, max);
+            target.post(() -> {
+                target.setTranslationX(x);
+                target.setTranslationY(y);
+            });
+        }
+
+        @Override
+        public void onAccuracyChanged(Sensor sensor, int accuracy) {
+        }
+    };
     private int loadToken;
+    private SensorManager sensorManager;
+    private boolean parallaxRegistered;
 
     public WallpaperController(@NonNull Context context, @NonNull ImageView target) {
         this.appContext = context.getApplicationContext();
@@ -166,7 +196,43 @@ public final class WallpaperController {
         }
     }
 
+    /**
+     * Optional tilt parallax. Unregistered unless the user turns it on, and the
+     * listener uses the slowest sensor rate.
+     */
+    public void setParallaxEnabled(boolean enabled) {
+        if (sensorManager == null) {
+            sensorManager = (SensorManager) appContext.getSystemService(Context.SENSOR_SERVICE);
+        }
+        if (sensorManager != null && parallaxRegistered) {
+            sensorManager.unregisterListener(parallaxListener);
+            parallaxRegistered = false;
+        }
+        if (!enabled || sensorManager == null) {
+            target.setTranslationX(0f);
+            target.setTranslationY(0f);
+            target.setScaleX(1f);
+            target.setScaleY(1f);
+            return;
+        }
+        Sensor rotation = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
+        if (rotation == null) {
+            return;
+        }
+        target.setScaleX(1.06f);
+        target.setScaleY(1.06f);
+        parallaxRegistered = sensorManager.registerListener(
+                parallaxListener,
+                rotation,
+                SensorManager.SENSOR_DELAY_NORMAL);
+    }
+
     public void shutdown() {
+        setParallaxEnabled(false);
         executor.shutdownNow();
+    }
+
+    private static float clamp(float value, float min, float max) {
+        return Math.max(min, Math.min(max, value));
     }
 }

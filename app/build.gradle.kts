@@ -15,6 +15,14 @@ android {
         targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 1
         versionName = "0.1.0"
+        val weatherApiKey = providers.gradleProperty("WEATHER_API_KEY").orElse("").get()
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+        buildConfigField("String", "WEATHER_API_KEY", "\"$weatherApiKey\"")
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     compileOptions {
@@ -54,4 +62,5 @@ dependencies {
     implementation(libs.room.runtime)
     annotationProcessor(libs.room.compiler)
     implementation(libs.biometric)
+    implementation(libs.dynamicanimation)
 }

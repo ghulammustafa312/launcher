@@ -6,16 +6,25 @@ import android.content.ClipDescription;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.RenderEffect;
+import android.graphics.Shader;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.TypedValue;
 import android.view.DragEvent;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.ViewOutlineProvider;
+import android.view.Window;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -29,7 +38,12 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
 import androidx.core.splashscreen.SplashScreen;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
@@ -50,17 +64,18 @@ import com.yourstudio.aerolauncher.privacy.AppLockHelper;
 import com.yourstudio.aerolauncher.privacy.AppLockPreferences;
 import com.yourstudio.aerolauncher.search.SearchController;
 import com.yourstudio.aerolauncher.ui.AppGridAdapter;
-import com.yourstudio.aerolauncher.ui.EdgeToEdge;
 import com.yourstudio.aerolauncher.ui.FolderPopup;
 import com.yourstudio.aerolauncher.ui.HomeDragListener;
 import com.yourstudio.aerolauncher.ui.HomeGestureRouter;
 import com.yourstudio.aerolauncher.ui.HomeMenus;
+import com.yourstudio.aerolauncher.ui.Motion;
 import com.yourstudio.aerolauncher.ui.HomePagerAdapter;
 import com.yourstudio.aerolauncher.ui.PageDotsController;
 import com.yourstudio.aerolauncher.ui.QuickPanelController;
 import com.yourstudio.aerolauncher.ui.SearchResultsAdapter;
 import com.yourstudio.aerolauncher.ui.WiggleAnimation;
 import com.yourstudio.aerolauncher.wallpaper.WallpaperController;
+import com.yourstudio.aerolauncher.wallpaper.WallpaperPreferences;
 import com.yourstudio.aerolauncher.widgets.WidgetHostManager;
 import com.yourstudio.aerolauncher.widgets.WidgetInstaller;
 import com.yourstudio.aerolauncher.widgets.WidgetPlacement;
@@ -142,7 +157,8 @@ public class MainActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        EdgeToEdge.apply(this, findViewById(R.id.root));
+        applyEdgeToEdge();
+        applyDockFrost();
 
         AeroLauncherApp app = (AeroLauncherApp) getApplication();
         appRepository = app.getAppRepository();
@@ -193,6 +209,7 @@ public class MainActivity extends AppCompatActivity
         findViewById(R.id.set_default_launcher).setOnClickListener(v ->
                 DefaultLauncherHelper.requestDefaultLauncher(this, homeRoleLauncher));
         findViewById(R.id.open_settings).setOnClickListener(v -> openLauncherSettings());
+        findViewById(R.id.search_pill).setOnClickListener(v -> openSearch());
         editDone.setOnClickListener(v -> setEditMode(false));
 
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
@@ -320,6 +337,9 @@ public class MainActivity extends AppCompatActivity
     protected void onStop() {
         BadgeStore.get().removeListener(this);
         widgetHostManager.stopListening();
+        if (wallpaperController != null) {
+            wallpaperController.setParallaxEnabled(false);
+        }
         super.onStop();
     }
 
@@ -329,6 +349,12 @@ public class MainActivity extends AppCompatActivity
         updateDefaultLauncherBanner();
         if (wallpaperController != null) {
             wallpaperController.refresh();
+            wallpaperController.setParallaxEnabled(
+                    WallpaperPreferences.isParallaxEnabled(this));
+        }
+        View dock = findViewById(R.id.dock);
+        if (dock != null) {
+            dock.post(this::applyDockFrost);
         }
         HomeLayout current = layoutRepository.getLayout();
         int capacity = HomePreferences.pageCapacity(this);
@@ -462,11 +488,15 @@ public class MainActivity extends AppCompatActivity
             ImageView icon = slot.findViewById(R.id.dock_icon);
             ImageButton remove = slot.findViewById(R.id.dock_remove);
             ItemLocation location = ItemLocation.dock(i);
-            HomeItem item = layout.getDock(i);
+            HomeItem rawItem = layout.getDock(i);
             Set<String> focusHidden = FocusPreferences.activeHiddenKeys(this);
-            if (item != null && item.isApp() && item.appKey != null && focusHidden.contains(item.appKey)) {
-                item = null;
+            if (rawItem != null
+                    && rawItem.isApp()
+                    && rawItem.appKey != null
+                    && focusHidden.contains(rawItem.appKey)) {
+                rawItem = null;
             }
+            final HomeItem item = rawItem;
 
             slot.setOnDragListener(new HomeDragListener(location, this));
             remove.setVisibility(editMode && item != null ? View.VISIBLE : View.GONE);
@@ -498,15 +528,16 @@ public class MainActivity extends AppCompatActivity
 
             slot.setOnClickListener(v -> {
                 if (!editMode) {
+                    Motion.pop(icon);
                     onItemClick(item, icon);
                 }
             });
 
             final HomeItem dockItem = item;
             slot.setOnLongClickListener(v -> {
-                boolean alreadyEditing = editMode;
                 onItemLongClick(dockItem, location, v);
-                if (alreadyEditing) {
+                if (editMode) {
+                    Motion.tick(v);
                     ClipData.Item clipItem =
                             new ClipData.Item(dockItem.id + "\n" + location.encode());
                     ClipData data = new ClipData(
@@ -536,14 +567,121 @@ public class MainActivity extends AppCompatActivity
         updateDefaultLauncherBanner();
     }
 
+    private void applyEdgeToEdge() {
+        Window window = getWindow();
+        WindowCompat.setDecorFitsSystemWindows(window, false);
+        window.setStatusBarColor(Color.TRANSPARENT);
+        window.setNavigationBarColor(Color.TRANSPARENT);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.setStatusBarContrastEnforced(false);
+            window.setNavigationBarContrastEnforced(false);
+        }
+        WindowInsetsControllerCompat controller =
+                WindowCompat.getInsetsController(window, window.getDecorView());
+        controller.setAppearanceLightStatusBars(false);
+        controller.setAppearanceLightNavigationBars(false);
+
+        View root = findViewById(R.id.root);
+        View homeContent = findViewById(R.id.home_content);
+        View topActions = findViewById(R.id.home_top_actions);
+        View searchOverlayView = findViewById(R.id.search_overlay);
+        View quickPanelView = findViewById(R.id.quick_panel_overlay);
+        int actionGap = getResources().getDimensionPixelSize(R.dimen.home_top_action_margin);
+        int actionEnd = getResources().getDimensionPixelOffset(R.dimen.screen_padding);
+        ViewCompat.setOnApplyWindowInsetsListener(root, (view, windowInsets) -> {
+            Insets bars = windowInsets.getInsets(
+                    WindowInsetsCompat.Type.systemBars()
+                            | WindowInsetsCompat.Type.displayCutout());
+            Insets ime = windowInsets.getInsets(WindowInsetsCompat.Type.ime());
+            homeContent.setPadding(bars.left, bars.top, bars.right, bars.bottom);
+            ViewGroup.MarginLayoutParams topParams =
+                    (ViewGroup.MarginLayoutParams) topActions.getLayoutParams();
+            topParams.topMargin = bars.top + actionGap;
+            topParams.rightMargin = bars.right + actionEnd;
+            topActions.setLayoutParams(topParams);
+            int overlayBottom = Math.max(bars.bottom, ime.bottom);
+            searchOverlayView.setPadding(bars.left, bars.top, bars.right, overlayBottom);
+            quickPanelView.setPadding(bars.left, bars.top, bars.right, bars.bottom);
+            return windowInsets;
+        });
+        ViewCompat.requestApplyInsets(root);
+    }
+
+    private void applyDockFrost() {
+        View dock = findViewById(R.id.dock);
+        ImageView plate = findViewById(R.id.dock_blur);
+        View scrim = findViewById(R.id.dock_scrim);
+        if (dock == null || plate == null || scrim == null) {
+            return;
+        }
+        dock.setOutlineProvider(ViewOutlineProvider.BACKGROUND);
+        dock.setClipToOutline(true);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            applyDockBlurEffect(plate, scrim);
+        } else {
+            plate.setVisibility(View.GONE);
+            scrim.setBackgroundColor(0xCCFFFFFF);
+        }
+    }
+
+    private void applyDockBlurEffect(@NonNull ImageView plate, @NonNull View scrim) {
+        plate.setVisibility(View.VISIBLE);
+        scrim.setBackgroundColor(0x66FFFFFF);
+        if (plate.getWidth() <= 0 || plate.getHeight() <= 0) {
+            return;
+        }
+        snapshotDockBackdrop(plate);
+        float radius = TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                22f,
+                getResources().getDisplayMetrics());
+        plate.setRenderEffect(RenderEffect.createBlurEffect(
+                radius, radius, Shader.TileMode.CLAMP));
+    }
+
+    private void snapshotDockBackdrop(@NonNull ImageView plate) {
+        int width = plate.getWidth();
+        int height = plate.getHeight();
+        if (width <= 0 || height <= 0) {
+            return;
+        }
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        ImageView wallpaper = findViewById(R.id.home_wallpaper);
+        if (wallpaper != null
+                && wallpaper.getVisibility() == View.VISIBLE
+                && wallpaper.getDrawable() != null) {
+            int[] plateLocation = new int[2];
+            int[] wallpaperLocation = new int[2];
+            plate.getLocationInWindow(plateLocation);
+            wallpaper.getLocationInWindow(wallpaperLocation);
+            canvas.save();
+            canvas.translate(
+                    wallpaperLocation[0] - plateLocation[0],
+                    wallpaperLocation[1] - plateLocation[1]);
+            try {
+                wallpaper.draw(canvas);
+            } catch (RuntimeException ignored) {
+                canvas.drawColor(0xB3FFFFFF);
+            }
+            canvas.restore();
+        }
+        canvas.drawColor(0x66FFFFFF);
+        plate.setImageBitmap(bitmap);
+    }
+
     private void openSearch() {
         if (editMode || (quickPanel != null && quickPanel.isOpen())) {
             return;
         }
         searchOpen = true;
         searchOverlay.setVisibility(View.VISIBLE);
-        searchOverlay.setAlpha(0f);
-        searchOverlay.animate().alpha(1f).setDuration(180).start();
+        if (Motion.reduced(this)) {
+            searchOverlay.setAlpha(1f);
+        } else {
+            searchOverlay.setAlpha(0f);
+            searchOverlay.animate().alpha(1f).setDuration(180).start();
+        }
         searchInput.requestFocus();
         InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         if (imm != null) {
@@ -557,6 +695,12 @@ public class MainActivity extends AppCompatActivity
         InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         if (imm != null) {
             imm.hideSoftInputFromWindow(searchInput.getWindowToken(), 0);
+        }
+        if (Motion.reduced(this)) {
+            searchOverlay.setVisibility(View.GONE);
+            searchOverlay.setAlpha(1f);
+            searchInput.setText("");
+            return;
         }
         searchOverlay.animate().alpha(0f).setDuration(150).withEndAction(() -> {
             searchOverlay.setVisibility(View.GONE);
@@ -654,7 +798,8 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onResizeWidget(@NonNull WidgetPlacement placement, int spanRows) {
         WidgetPlacement updated = placement.copy();
-        updated.spanRows = spanRows;
+        updated.spanRows = 2;
+        updated.spanColumns = spanRows >= 4 ? 4 : 2;
         layoutRepository.updateWidget(updated);
     }
 
@@ -676,9 +821,9 @@ public class MainActivity extends AppCompatActivity
                 pendingStackTarget = placement;
                 showWidgetPicker();
             } else if (which == 1) {
-                onResizeWidget(placement, Math.min(4, placement.spanRows + 1));
+                onResizeWidget(placement, 4);
             } else if (which == 2) {
-                onResizeWidget(placement, Math.max(2, placement.spanRows - 1));
+                onResizeWidget(placement, 2);
             } else if (which == 3) {
                 onRemoveWidget(placement);
             } else if (which == 4) {
@@ -731,14 +876,28 @@ public class MainActivity extends AppCompatActivity
                     stack.id,
                     true,
                     stack.appWidgetIds,
-                    stack.spanRows,
+                    2,
                     stack.rank);
+            updated.spanColumns = stack.columnSpan();
             layoutRepository.updateWidget(updated);
             pendingStackTarget = null;
             return;
         }
         WidgetPlacement placement = WidgetPlacement.single(appWidgetId, 2, 0);
+        placement.spanColumns = defaultWidgetColumns(appWidgetId);
         layoutRepository.addWidgetToPage(pendingWidgetPage, placement);
+    }
+
+    private int defaultWidgetColumns(int appWidgetId) {
+        android.appwidget.AppWidgetProviderInfo info = widgetHostManager.getInfo(appWidgetId);
+        if (info == null || info.provider == null) {
+            return 2;
+        }
+        String name = info.provider.getClassName();
+        if (name.endsWith("NotesWidgetProvider") || name.endsWith("CalendarWidgetProvider")) {
+            return 4;
+        }
+        return 2;
     }
 
     @Override
@@ -768,7 +927,7 @@ public class MainActivity extends AppCompatActivity
             int next = homePager.getCurrentItem() + delta;
             int max = Math.max(0, pagerAdapter.getLibraryPageIndex() - 1);
             if (next >= 0 && next <= max) {
-                homePager.setCurrentItem(next, true);
+                homePager.setCurrentItem(next, !Motion.reduced(this));
             }
         };
         pageFlipHandler.postDelayed(pendingPageFlip, 450);
@@ -826,12 +985,9 @@ public class MainActivity extends AppCompatActivity
             @NonNull HomeItem item,
             @NonNull ItemLocation location,
             @NonNull View anchor) {
-        // Do not enter edit mode here — that left remove "X" badges stuck on screen
-        // while the transparent PopupMenu was unreadable over wallpaper.
-        if (editMode) {
-            return;
+        if (!editMode) {
+            setEditMode(true);
         }
-        showItemMenu(item, location);
     }
 
     @Override

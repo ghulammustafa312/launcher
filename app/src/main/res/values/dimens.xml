@@ -9,5 +9,14 @@
     <dimen name="card_padding">20dp</dimen>
     <dimen name="swatch_size">40dp</dimen>
     <dimen name="app_icon_size">52dp</dimen>
-    <dimen name="dock_height">72dp</dimen>
+    <dimen name="home_icon_size">60dp</dimen>
+    <dimen name="home_icon_label_gap">3dp</dimen>
+    <dimen name="home_label_text_size">11sp</dimen>
+    <dimen name="dock_height">80dp</dimen>
+    <dimen name="dock_icon_size">54dp</dimen>
+    <dimen name="dock_corner_radius">26dp</dimen>
+    <dimen name="dock_bottom_gap">10dp</dimen>
+    <dimen name="home_top_action_margin">8dp</dimen>
+    <dimen name="widget_corner_radius">20dp</dimen>
+    <dimen name="widget_card_height">156dp</dimen>
 </resources>

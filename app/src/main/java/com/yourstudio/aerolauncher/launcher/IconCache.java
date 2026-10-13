@@ -6,7 +6,6 @@ import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.LruCache;
-import android.util.TypedValue;
 import android.widget.ImageView;
 
 import androidx.annotation.MainThread;
@@ -35,10 +34,7 @@ public final class IconCache {
     public IconCache(@NonNull Context context) {
         this.appContext = context.getApplicationContext();
         this.densityDpi = appContext.getResources().getDisplayMetrics().densityDpi;
-        this.iconSizePx = Math.round(TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP,
-                52,
-                appContext.getResources().getDisplayMetrics()));
+        this.iconSizePx = appContext.getResources().getDimensionPixelSize(R.dimen.home_icon_size);
         // Cap cache harder on low-RAM devices (~1/12 of heap).
         int maxKb = (int) (Runtime.getRuntime().maxMemory() / 1024 / 12);
         cache = new LruCache<String, Drawable>(Math.max(512, maxKb)) {

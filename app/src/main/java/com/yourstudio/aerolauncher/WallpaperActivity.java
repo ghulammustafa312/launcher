@@ -3,8 +3,11 @@ package com.yourstudio.aerolauncher;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.widget.CompoundButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
+
+import androidx.appcompat.widget.SwitchCompat;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -52,6 +55,11 @@ public class WallpaperActivity extends AppCompatActivity {
         int current = WallpaperPreferences.getBlur(this);
         blur.setProgress(current);
         refreshBlurLabel(current);
+        SwitchCompat parallax = findViewById(R.id.wallpaper_parallax);
+        parallax.setChecked(WallpaperPreferences.isParallaxEnabled(this));
+        parallax.setOnCheckedChangeListener((CompoundButton button, boolean checked) ->
+                WallpaperPreferences.setParallax(this, checked));
+
         blur.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {

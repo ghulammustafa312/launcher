@@ -238,7 +238,9 @@ public final class AppLibraryAdapter extends RecyclerView.Adapter<RecyclerView.V
             View view = LayoutInflater.from(parent.getContext())
                     .inflate(R.layout.item_app_icon, parent, false);
             view.findViewById(R.id.remove_badge).setVisibility(View.GONE);
-            return new Holder(view);
+            Holder holder = new Holder(view);
+            AppGridAdapter.applyLabelShadow(holder.label);
+            return holder;
         }
 
         @Override

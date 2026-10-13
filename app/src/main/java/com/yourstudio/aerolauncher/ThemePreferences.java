@@ -120,7 +120,7 @@ public final class ThemePreferences {
 
     @NonNull
     public static String getIconStyle(@NonNull Context context) {
-        return prefs(context).getString(KEY_ICON_STYLE, ICON_ROUNDED);
+        return prefs(context).getString(KEY_ICON_STYLE, ICON_SQUIRCLE);
     }
 
     public static void setIconStyle(@NonNull Context context, @NonNull String style) {

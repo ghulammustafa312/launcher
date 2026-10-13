@@ -4,13 +4,13 @@
     android:layout_height="match_parent"
     android:background="@drawable/bg_builtin_widget"
     android:orientation="vertical"
-    android:padding="12dp">
+    android:padding="16dp">
 
     <TextView
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/widget_notes_title"
-        android:textColor="@color/white_70"
+        android:textColor="@color/widget_on_card_soft"
         android:textSize="12sp" />
 
     <TextView
@@ -20,7 +20,7 @@
         android:layout_marginTop="6dp"
         android:layout_weight="1"
         android:ellipsize="end"
-        android:maxLines="6"
-        android:textColor="@color/white"
-        android:textSize="15sp" />
+        android:maxLines="4"
+        android:textColor="@color/widget_on_card"
+        android:textSize="16sp" />
 </LinearLayout>

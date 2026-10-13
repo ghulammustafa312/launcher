@@ -2,7 +2,7 @@
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:state_selected="true">
         <shape android:shape="oval">
-            <solid android:color="@color/white" />
+            <solid android:color="@color/widget_on_card" />
             <size
                 android:width="7dp"
                 android:height="7dp" />
@@ -10,7 +10,7 @@
     </item>
     <item>
         <shape android:shape="oval">
-            <solid android:color="@color/white_40" />
+            <solid android:color="@color/widget_on_card_soft" />
             <size
                 android:width="7dp"
                 android:height="7dp" />

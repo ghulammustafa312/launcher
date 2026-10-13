@@ -108,5 +108,19 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:max="25" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/wallpaper_parallax"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="@string/wallpaper_parallax" />
+
+        <TextView
+            style="@style/TextAppearance.AeroLauncher.Body"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/wallpaper_parallax_hint" />
     </LinearLayout>
 </ScrollView>

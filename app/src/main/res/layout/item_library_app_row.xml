@@ -21,6 +21,7 @@
         android:layout_marginStart="12dp"
         android:layout_weight="1"
         android:ellipsize="end"
-        android:maxLines="1"
-        android:textColor="@color/home_label" />
+            android:fontFamily="@font/inter"
+            android:maxLines="1"
+            android:textColor="@color/home_label" />
 </LinearLayout>

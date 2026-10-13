@@ -30,6 +30,11 @@
     <color name="home_label">#F2FFFFFF</color>
     <color name="white">#FFFFFFFF</color>
     <color name="white_70">#B3FFFFFF</color>
+    <color name="white_45">#73FFFFFF</color>
     <color name="white_40">#66FFFFFF</color>
+    <color name="dock_glass">#B3FFFFFF</color>
+    <color name="widget_card_fill">#CCFFFFFF</color>
+    <color name="widget_on_card">#1B1F3B</color>
+    <color name="widget_on_card_soft">#991B1F3B</color>
     <color name="quick_panel_scrim">#66000000</color>
 </resources>

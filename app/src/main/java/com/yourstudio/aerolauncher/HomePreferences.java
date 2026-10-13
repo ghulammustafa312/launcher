@@ -32,11 +32,11 @@ public final class HomePreferences {
     }
 
     public static int getColumns(Context context) {
-        return prefs(context).getInt(KEY_COLUMNS, DEFAULT_COLUMNS);
+        return DEFAULT_COLUMNS;
     }
 
     public static int getRows(Context context) {
-        return prefs(context).getInt(KEY_ROWS, DEFAULT_ROWS);
+        return DEFAULT_ROWS;
     }
 
     public static void setGridSize(Context context, int columns, int rows) {

@@ -27,6 +27,7 @@ public final class WallpaperPreferences {
     private static final String KEY_BUILTIN = "wallpaper_builtin";
     private static final String KEY_CUSTOM_URI = "wallpaper_custom_uri";
     private static final String KEY_BLUR = "wallpaper_blur";
+    private static final String KEY_PARALLAX = "wallpaper_parallax";
 
     private WallpaperPreferences() {
     }
@@ -80,5 +81,14 @@ public final class WallpaperPreferences {
 
     public static void setBlur(@NonNull Context context, int blur) {
         prefs(context).edit().putInt(KEY_BLUR, Math.max(0, Math.min(25, blur))).apply();
+    }
+
+    /** Off by default so the rotation sensor stays idle. */
+    public static boolean isParallaxEnabled(@NonNull Context context) {
+        return prefs(context).getBoolean(KEY_PARALLAX, false);
+    }
+
+    public static void setParallax(@NonNull Context context, boolean enabled) {
+        prefs(context).edit().putBoolean(KEY_PARALLAX, enabled).apply();
     }
 }

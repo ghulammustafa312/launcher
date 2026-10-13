@@ -215,6 +215,7 @@ public final class LayoutBackup {
         json.put("id", widget.id);
         json.put("stack", widget.stack);
         json.put("spanRows", widget.spanRows);
+        json.put("spanColumns", widget.columnSpan());
         json.put("rank", widget.rank);
         JSONArray ids = new JSONArray();
         for (Integer id : widget.appWidgetIds) {
@@ -231,11 +232,13 @@ public final class LayoutBackup {
         for (int i = 0; i < arr.length(); i++) {
             ids.add(arr.getInt(i));
         }
-        return new WidgetPlacement(
+        WidgetPlacement placement = new WidgetPlacement(
                 json.getString("id"),
                 json.optBoolean("stack", ids.size() > 1),
                 ids,
-                json.optInt("spanRows", 2),
+                2,
                 json.optInt("rank", 0));
+        placement.spanColumns = json.optInt("spanColumns", 2) >= 4 ? 4 : 2;
+        return placement;
     }
 }

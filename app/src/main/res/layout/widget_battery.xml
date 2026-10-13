@@ -3,23 +3,23 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/bg_builtin_widget"
-    android:gravity="center"
+    android:gravity="center_vertical"
     android:orientation="vertical"
-    android:padding="12dp">
+    android:padding="16dp">
 
     <TextView
         android:id="@+id/widget_battery_percent"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:includeFontPadding="false"
-        android:textColor="@color/white"
+        android:textColor="@color/widget_on_card"
         android:textSize="36sp" />
 
     <TextView
         android:id="@+id/widget_battery_status"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
-        android:textColor="@color/white_70"
+        android:textColor="@color/widget_on_card_soft"
         android:textSize="13sp" />
 </LinearLayout>
